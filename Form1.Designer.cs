@@ -32,15 +32,14 @@
             label1 = new Label();
             label2 = new Label();
             FrequencyInput = new NumericUpDown();
-            SleepTimeInput = new NumericUpDown();
             ResultBox = new TextBox();
+            EndDateTimePicker = new DateTimePicker();
             ((System.ComponentModel.ISupportInitialize)FrequencyInput).BeginInit();
-            ((System.ComponentModel.ISupportInitialize)SleepTimeInput).BeginInit();
             SuspendLayout();
             // 
             // StartBtn
             // 
-            StartBtn.Location = new Point(286, 64);
+            StartBtn.Location = new Point(294, 43);
             StartBtn.Name = "StartBtn";
             StartBtn.Size = new Size(83, 25);
             StartBtn.TabIndex = 0;
@@ -53,34 +52,27 @@
             label1.AutoSize = true;
             label1.Location = new Point(12, 29);
             label1.Name = "label1";
-            label1.Size = new Size(39, 17);
+            label1.Size = new Size(69, 17);
             label1.TabIndex = 1;
-            label1.Text = "频率";
+            label1.Text = "每秒频率";
             // 
             // label2
             // 
             label2.AutoSize = true;
             label2.Location = new Point(12, 89);
             label2.Name = "label2";
-            label2.Size = new Size(40, 17);
+            label2.Size = new Size(70, 17);
             label2.TabIndex = 2;
-            label2.Text = "时长";
+            label2.Text = "截至时间";
             // 
             // FrequencyInput
             // 
-            FrequencyInput.Location = new Point(77, 27);
+            FrequencyInput.Location = new Point(88, 27);
             FrequencyInput.Name = "FrequencyInput";
             FrequencyInput.Size = new Size(132, 25);
             FrequencyInput.TabIndex = 3;
+            FrequencyInput.Value = new decimal(new int[] { 3, 0, 0, 0 });
             FrequencyInput.ValueChanged += FrequencyInput_ValueChanged;
-            // 
-            // SleepTimeInput
-            // 
-            SleepTimeInput.Location = new Point(77, 81);
-            SleepTimeInput.Name = "SleepTimeInput";
-            SleepTimeInput.Size = new Size(132, 25);
-            SleepTimeInput.TabIndex = 4;
-            SleepTimeInput.ValueChanged += SleepTimeInput_ValueChanged;
             // 
             // ResultBox
             // 
@@ -91,13 +83,22 @@
             ResultBox.Size = new Size(256, 109);
             ResultBox.TabIndex = 5;
             // 
+            // EndDateTimePicker
+            // 
+            EndDateTimePicker.CustomFormat = "";
+            EndDateTimePicker.Location = new Point(88, 83);
+            EndDateTimePicker.Name = "EndDateTimePicker";
+            EndDateTimePicker.Size = new Size(221, 25);
+            EndDateTimePicker.TabIndex = 6;
+            EndDateTimePicker.ValueChanged += EndDateTimePicker_ValueChanged;
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(378, 273);
+            Controls.Add(EndDateTimePicker);
             Controls.Add(ResultBox);
-            Controls.Add(SleepTimeInput);
             Controls.Add(FrequencyInput);
             Controls.Add(label2);
             Controls.Add(label1);
@@ -105,7 +106,6 @@
             Name = "Form1";
             Text = "点点";
             ((System.ComponentModel.ISupportInitialize)FrequencyInput).EndInit();
-            ((System.ComponentModel.ISupportInitialize)SleepTimeInput).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -116,7 +116,7 @@
         private Label label1;
         private Label label2;
         private NumericUpDown FrequencyInput;
-        private NumericUpDown SleepTimeInput;
         private TextBox ResultBox;
+        private DateTimePicker EndDateTimePicker;
     }
 }

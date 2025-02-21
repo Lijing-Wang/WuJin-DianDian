@@ -23,7 +23,7 @@ namespace 连点器
 
         }
 
-        internal void StimulateClick()
+        internal void StimulateClick(int repeat)
         {
             Point CurrentCursorPosition;
             var findPoint = GetCursorPos(out CurrentCursorPosition);
@@ -32,7 +32,7 @@ namespace 连点器
                 int x = CurrentCursorPosition.X;
                 int y = CurrentCursorPosition.Y;
                 mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, x, y, 0, 0);
-                logger.Log($"Clicked at {x}, {y}");
+                logger.Log($"Clicked at {x}, {y} for {repeat} repeat");
             }
             else
             {
