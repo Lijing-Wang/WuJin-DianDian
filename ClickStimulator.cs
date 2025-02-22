@@ -15,15 +15,15 @@ namespace 连点器
         internal const int MOUSEEVENTF_LEFTDOWN = 0x02;
         internal const int MOUSEEVENTF_LEFTUP = 0x04;
 
-        private Logger logger;
+        private readonly Logger logger;
 
         public ClickStimulator(TextBox resultBox)
         {
-            this.logger = new Logger(resultBox);
+            logger = new Logger(resultBox);
 
         }
 
-        internal void StimulateClick(int repeat)
+        internal void StimulateClick()
         {
             Point CurrentCursorPosition;
             var findPoint = GetCursorPos(out CurrentCursorPosition);
@@ -32,11 +32,11 @@ namespace 连点器
                 int x = CurrentCursorPosition.X;
                 int y = CurrentCursorPosition.Y;
                 mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, x, y, 0, 0);
-                logger.Log($"Clicked at {x}, {y} for {repeat} repeat");
+                logger.Append($"Clicked at {x}, {y}.");
             }
             else
             {
-                logger.Log("Failed to get cursor position");
+                logger.Append("Failed to get cursor position");
             }
         }
     }

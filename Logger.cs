@@ -13,12 +13,13 @@ namespace 连点器
         public Logger(TextBox resultBox)
         {
             ResultBox = resultBox;
-            ResultBox.Text = "Results:";
         }
 
-        internal void Log(string message)
+        internal void Append(string message)
         {
-            ResultBox.Text = message;
+            ResultBox.AppendText(Environment.NewLine);
+            ResultBox.AppendText(Environment.NewLine);
+            ResultBox.AppendText(message);
         }
     }
 }

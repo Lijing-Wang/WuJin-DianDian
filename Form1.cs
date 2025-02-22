@@ -5,12 +5,18 @@ namespace 连点器
 {
     public partial class Form1 : Form
     {
-        private decimal Frequency;
-        private DateTime EndDateTime;
-        private DateTime StartDateTime = DateTime.Now;
 
-        private int TotalClicks;
-        private int ClickInterval; 
+        private DateTime EndDateTime;
+
+        private bool likeHuman = true;
+
+        // per second
+        private static decimal DefaultFrequency = 3;
+        private int DefaultInterval = (int)(1000 / DefaultFrequency);
+
+        // randomly draw a choice to minic human clicking behavior
+        // in seconds
+        private List<double> ClickWaitTimeChoices = new List<double> { 1, 0.5, 0.3 };
 
         // countdown time for mouse to get ready - seconds
         private readonly int Countdown = 1;
@@ -24,56 +30,78 @@ namespace 连点器
             logger = new Logger(ResultBox);
             ClickStimulator = new ClickStimulator(ResultBox);
 
-            Frequency = FrequencyInput.Value;
-
             EndDateTimePicker.Format = DateTimePickerFormat.Custom;
             EndDateTimePicker.CustomFormat = "MM/dd/yyyy hh:mm:ss";
-            EndDateTimePicker.Value = StartDateTime;
+            EndDateTimePicker.Value = DateTime.Now;
         }
 
         private async void StartBtn_Click(object sender, EventArgs e)
         {
-            logger.Log($"Count down for {Countdown} seconds to start");
-            await Task.Delay(Countdown * 1000); // Countdown is in seconds, Task.Delay takes milliseconds
+            logger.Append($"Count down for {Countdown} seconds to start");
+            await Task.Delay(Countdown * 1000); 
 
-            logger.Log("Countdown finished. Starting process...");
+            logger.Append("Countdown finished. Starting clicking...");
 
-            GetTotalClicks();
-            SetClickInterval();
-
-            for (int i = 0; i < TotalClicks; i++)
+            while (DateTime.Now <= EndDateTime)
             {
-                ClickStimulator.StimulateClick(i+1);
-                await Task.Delay(ClickInterval);
-            }   
+                ClickStimulator.StimulateClick();
+                if (likeHuman)
+                {
+                    var interval = GetRamdomClickInterval();
+                    await Task.Delay(interval);
+                    logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}");
+                }
+                else
+                {
+                    await Task.Delay(DefaultInterval);
+                    logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {DefaultInterval}");
+
+                }
+            }
+
+            logger.Append("End clicking"); 
         }
 
-        private void GetTotalClicks()
+        private int GetRamdomClickInterval()
         {
-            TotalClicks = (int)((EndDateTime - StartDateTime).TotalSeconds / (double)Frequency);
-            logger.Log($"Total clicks will be {TotalClicks}");
-
-        }
-
-        private void SetClickInterval()
-        {
-            ClickInterval = (int)(1000 / Frequency);
-            logger.Log($"Click interval will be {ClickInterval}");
-
-        }
-
-        private void FrequencyInput_ValueChanged(object sender, EventArgs e)
-        {
-            Frequency = FrequencyInput.Value;
-            logger.Log($"Set frequency to {Frequency}");
-
+            Random random = new Random();
+            int index = random.Next(ClickWaitTimeChoices.Count);
+            return Convert.ToInt32(ClickWaitTimeChoices[index] * 1000);
         }
 
         private void EndDateTimePicker_ValueChanged(object sender, EventArgs e)
         {
             EndDateTime = EndDateTimePicker.Value;
-            logger.Log($"Set end date time to {EndDateTime}");
+            if (EndDateTime > DateTime.Now)
+            {
+                logger.Append($"Set end date time to {EndDateTime}");
+            }
+            else
+            {
+                logger.Append("Change time picker as it is in the past");
+            }
 
+        }
+
+        private void LikeMachineClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            likeHuman = !LikeMachineClickControl.Checked;
+            LikeHumanClickControl.Checked = likeHuman;
+            logger.Append($"Turn on human-like click mode - ramdomly pick speed for every click from {String.Join("s, ", ClickWaitTimeChoices.ToArray())}");
+        }
+
+        private void LikeHumanClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            likeHuman = LikeHumanClickControl.Checked;
+            LikeMachineClickControl.Checked = !likeHuman;
+            logger.Append($"Turn on machine-like click mode - clicking speed: {DefaultFrequency}/second");
+
+        }
+
+        private void StopButton_Click(object sender, EventArgs e)
+        {
+            // invalid the end time to stop the clicking
+            EndDateTime = DateTime.Now;
         }
     }
 }
