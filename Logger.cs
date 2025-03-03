@@ -21,5 +21,10 @@ namespace 连点器
             ResultBox.AppendText(Environment.NewLine);
             ResultBox.AppendText(message);
         }
+
+        internal void Log(string message)
+        {
+            ResultBox.Text = message;
+        }
     }
 }

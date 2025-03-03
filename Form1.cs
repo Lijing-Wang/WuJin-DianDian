@@ -35,19 +35,11 @@ namespace 连点器
             EndDateTimePicker.Format = DateTimePickerFormat.Custom;
             EndDateTimePicker.CustomFormat = "MM/dd/yyyy hh:mm:ss";
             EndDateTimePicker.Value = DateTime.Now;
-
-            CustomFrequencyInput.Enabled = !likeHuman;
-
-            StartBtn.Enabled = !inProcess;
-            StopButton.Enabled = inProcess;
         }
 
         private async void StartBtn_Click(object sender, EventArgs e)
         {
-            inProcess = true;
-            StartBtn.Enabled = !inProcess;
-            StopButton.Enabled = inProcess;
-
+            StartStopButtonSwitch(true);
 
             EndDateTime = EndDateTimePicker.Value;
 
@@ -88,39 +80,29 @@ namespace 连点器
             EndDateTime = EndDateTimePicker.Value;
             if (EndDateTime > DateTime.Now)
             {
-                logger.Append($"Set end date time to {EndDateTime}");
+                logger.Log($"Set end date time to {EndDateTime}");
             }
             else
             {
-                logger.Append("Change time picker as it is in the past");
+                logger.Log("Change time picker as it is in the past");
             }
 
         }
 
         private void LikeMachineClickControl_CheckedChanged(object sender, EventArgs e)
         {
-            likeHuman = !LikeMachineClickControl.Checked;
-            LikeHumanClickControl.Checked = likeHuman;
-            CustomFrequencyInput.Enabled = !likeHuman;
-
-            logger.Append($"Turn on human-like click mode - ramdomly pick speed for every click from {String.Join("s, ", ClickWaitTimeChoices.ToArray())}");
+            ClickingModeButtonSwich(!LikeMachineClickControl.Checked);
         }
 
         private void LikeHumanClickControl_CheckedChanged(object sender, EventArgs e)
         {
-            likeHuman = LikeHumanClickControl.Checked;
-            LikeMachineClickControl.Checked = !likeHuman;
-            CustomFrequencyInput.Enabled = !likeHuman;
 
-            logger.Append($"Turn on machine-like click mode - clicking speed: {Frequency}/second");
-
+            ClickingModeButtonSwich(LikeHumanClickControl.Checked);
         }
 
         private void StopButton_Click(object sender, EventArgs e)
         {
-            inProcess = false;
-            StartBtn.Enabled = !inProcess;
-            StopButton.Enabled = inProcess;
+            StartStopButtonSwitch(false);
 
             // invalid the end time to stop the clicking
             EndDateTime = DateTime.Now;
@@ -130,6 +112,37 @@ namespace 连点器
         {
             Frequency = CustomFrequencyInput.Value;
             Interval = (int)(1000 / Frequency);
+        }
+
+        private void StartStopButtonSwitch(bool inProgress)
+        {
+            inProcess = inProgress;
+            StartBtn.Enabled = !inProcess;
+            StopButton.Enabled = inProcess;
+        }
+
+        private void ClickingModeButtonSwich(bool likeHumanChecked)
+        {
+            likeHuman = likeHumanChecked;
+
+            if (likeHuman)
+            {
+                LikeMachineClickControl.Checked = !likeHuman;
+
+                logger.Log($"Use human-like click mode - click speed from {String.Join("s, ", ClickWaitTimeChoices.ToArray())}");
+            }
+            else
+            {
+                LikeHumanClickControl.Checked = likeHuman;
+
+                logger.Log($"Use custom set click mode - click speed: {Frequency}/second");
+
+            }
+            CustomFrequencyInput.Enabled = !likeHuman;
+
+
+
+            
         }
     }
 }
