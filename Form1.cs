@@ -1,4 +1,5 @@
 
+using System.Diagnostics;
 using System.Windows.Forms;
 
 namespace 连点器
@@ -9,10 +10,11 @@ namespace 连点器
         private DateTime EndDateTime;
 
         private bool likeHuman = true;
+        private bool inProcess = false;
 
         // per second
-        private static decimal DefaultFrequency = 3;
-        private int DefaultInterval = (int)(1000 / DefaultFrequency);
+        private decimal Frequency = 3;
+        private int Interval = 333;
 
         // randomly draw a choice to minic human clicking behavior
         // in seconds
@@ -33,12 +35,24 @@ namespace 连点器
             EndDateTimePicker.Format = DateTimePickerFormat.Custom;
             EndDateTimePicker.CustomFormat = "MM/dd/yyyy hh:mm:ss";
             EndDateTimePicker.Value = DateTime.Now;
+
+            CustomFrequencyInput.Enabled = !likeHuman;
+
+            StartBtn.Enabled = !inProcess;
+            StopButton.Enabled = inProcess;
         }
 
         private async void StartBtn_Click(object sender, EventArgs e)
         {
+            inProcess = true;
+            StartBtn.Enabled = !inProcess;
+            StopButton.Enabled = inProcess;
+
+
+            EndDateTime = EndDateTimePicker.Value;
+
             logger.Append($"Count down for {Countdown} seconds to start");
-            await Task.Delay(Countdown * 1000); 
+            await Task.Delay(Countdown * 1000);
 
             logger.Append("Countdown finished. Starting clicking...");
 
@@ -49,17 +63,17 @@ namespace 连点器
                 {
                     var interval = GetRamdomClickInterval();
                     await Task.Delay(interval);
-                    logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}");
+                    logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
                 }
                 else
                 {
-                    await Task.Delay(DefaultInterval);
-                    logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {DefaultInterval}");
+                    await Task.Delay(Interval);
+                    logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {Interval}s.");
 
                 }
             }
 
-            logger.Append("End clicking"); 
+            logger.Append("End clicking");
         }
 
         private int GetRamdomClickInterval()
@@ -87,6 +101,8 @@ namespace 连点器
         {
             likeHuman = !LikeMachineClickControl.Checked;
             LikeHumanClickControl.Checked = likeHuman;
+            CustomFrequencyInput.Enabled = !likeHuman;
+
             logger.Append($"Turn on human-like click mode - ramdomly pick speed for every click from {String.Join("s, ", ClickWaitTimeChoices.ToArray())}");
         }
 
@@ -94,14 +110,26 @@ namespace 连点器
         {
             likeHuman = LikeHumanClickControl.Checked;
             LikeMachineClickControl.Checked = !likeHuman;
-            logger.Append($"Turn on machine-like click mode - clicking speed: {DefaultFrequency}/second");
+            CustomFrequencyInput.Enabled = !likeHuman;
+
+            logger.Append($"Turn on machine-like click mode - clicking speed: {Frequency}/second");
 
         }
 
         private void StopButton_Click(object sender, EventArgs e)
         {
+            inProcess = false;
+            StartBtn.Enabled = !inProcess;
+            StopButton.Enabled = inProcess;
+
             // invalid the end time to stop the clicking
             EndDateTime = DateTime.Now;
+        }
+
+        private void CustomFrequencyInput_ValueChanged(object sender, EventArgs e)
+        {
+            Frequency = CustomFrequencyInput.Value;
+            Interval = (int)(1000 / Frequency);
         }
     }
 }

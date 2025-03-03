@@ -35,11 +35,14 @@
             LikeHumanClickControl = new RadioButton();
             LikeMachineClickControl = new RadioButton();
             StopButton = new Button();
+            CustomFrequencyInput = new NumericUpDown();
+            label1 = new Label();
+            ((System.ComponentModel.ISupportInitialize)CustomFrequencyInput).BeginInit();
             SuspendLayout();
             // 
             // StartBtn
             // 
-            StartBtn.Location = new Point(12, 138);
+            StartBtn.Location = new Point(12, 213);
             StartBtn.Name = "StartBtn";
             StartBtn.Size = new Size(108, 25);
             StartBtn.TabIndex = 0;
@@ -58,7 +61,7 @@
             // 
             // ResultBox
             // 
-            ResultBox.Location = new Point(12, 199);
+            ResultBox.Location = new Point(12, 284);
             ResultBox.Multiline = true;
             ResultBox.Name = "ResultBox";
             ResultBox.ReadOnly = true;
@@ -91,7 +94,7 @@
             // LikeMachineClickControl
             // 
             LikeMachineClickControl.AutoSize = true;
-            LikeMachineClickControl.Location = new Point(192, 31);
+            LikeMachineClickControl.Location = new Point(118, 31);
             LikeMachineClickControl.Name = "LikeMachineClickControl";
             LikeMachineClickControl.Size = new Size(117, 21);
             LikeMachineClickControl.TabIndex = 8;
@@ -102,7 +105,8 @@
             // 
             // StopButton
             // 
-            StopButton.Location = new Point(226, 138);
+            StopButton.Enabled = false;
+            StopButton.Location = new Point(226, 213);
             StopButton.Name = "StopButton";
             StopButton.Size = new Size(83, 25);
             StopButton.TabIndex = 9;
@@ -110,11 +114,32 @@
             StopButton.UseVisualStyleBackColor = true;
             StopButton.Click += StopButton_Click;
             // 
+            // CustomFrequencyInput
+            // 
+            CustomFrequencyInput.Enabled = false;
+            CustomFrequencyInput.Location = new Point(241, 27);
+            CustomFrequencyInput.Name = "CustomFrequencyInput";
+            CustomFrequencyInput.Size = new Size(60, 25);
+            CustomFrequencyInput.TabIndex = 10;
+            CustomFrequencyInput.Value = new decimal(new int[] { 3, 0, 0, 0 });
+            CustomFrequencyInput.ValueChanged += CustomFrequencyInput_ValueChanged;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(12, 255);
+            label1.Name = "label1";
+            label1.Size = new Size(43, 17);
+            label1.TabIndex = 11;
+            label1.Text = "Status";
+            // 
             // Form1
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(328, 347);
+            ClientSize = new Size(328, 434);
+            Controls.Add(label1);
+            Controls.Add(CustomFrequencyInput);
             Controls.Add(StopButton);
             Controls.Add(LikeMachineClickControl);
             Controls.Add(LikeHumanClickControl);
@@ -124,6 +149,7 @@
             Controls.Add(StartBtn);
             Name = "Form1";
             Text = "点点";
+            ((System.ComponentModel.ISupportInitialize)CustomFrequencyInput).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -137,5 +163,7 @@
         private RadioButton LikeHumanClickControl;
         private RadioButton LikeMachineClickControl;
         private Button StopButton;
+        private NumericUpDown CustomFrequencyInput;
+        private Label label1;
     }
 }
