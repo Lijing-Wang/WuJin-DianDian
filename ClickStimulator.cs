@@ -9,6 +9,10 @@ namespace 连点器
         [return: MarshalAs(UnmanagedType.Bool)]
         internal static extern bool GetCursorPos(out Point lpPoint);
 
+        [DllImport("user32.dll", EntryPoint = "SetCursorPos")]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool SetCursorPos(int x, int y);
+
         [DllImport("user32.dll")]
         internal static extern void mouse_event(int dwFlags, int dx, int dy, int dwData, int dwExtraInfo);
 
@@ -20,10 +24,9 @@ namespace 连点器
         public ClickStimulator(TextBox resultBox)
         {
             logger = new Logger(resultBox);
-
         }
 
-        internal void StimulateClick()
+        internal void StimulateClickAtCurrentPosition()
         {
             Point CurrentCursorPosition;
             var findPoint = GetCursorPos(out CurrentCursorPosition);
@@ -38,6 +41,13 @@ namespace 连点器
             {
                 logger.Append("Failed to get cursor position");
             }
+        }
+
+        internal void StimulateClickAt(Point point)
+        {
+            SetCursorPos(point.X, point.Y);
+            mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, point.X, point.Y, 0, 0);
+            logger.Append($"Clicked at {point.X}, {point.Y}.");
         }
     }
 }

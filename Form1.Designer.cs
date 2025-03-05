@@ -38,10 +38,10 @@
             CustomFrequencyInput = new NumericUpDown();
             groupBox1 = new GroupBox();
             groupBox2 = new GroupBox();
-            radioButton1 = new RadioButton();
-            radioButton2 = new RadioButton();
-            button1 = new Button();
-            button2 = new Button();
+            StopCursorRecordingButton = new Button();
+            StartCursorRecordingButton = new Button();
+            UseRecordedCursorButton = new RadioButton();
+            UseCurrentPositionButton = new RadioButton();
             groupBox3 = new GroupBox();
             ((System.ComponentModel.ISupportInitialize)CustomFrequencyInput).BeginInit();
             groupBox1.SuspendLayout();
@@ -119,14 +119,14 @@
             StopButton.Name = "StopButton";
             StopButton.Size = new Size(83, 25);
             StopButton.TabIndex = 9;
-            StopButton.Text = "终止";
+            StopButton.Text = "终止Esc";
             StopButton.UseVisualStyleBackColor = true;
             StopButton.Click += StopButton_Click;
             // 
             // CustomFrequencyInput
             // 
             CustomFrequencyInput.Enabled = false;
-            CustomFrequencyInput.Location = new Point(229, 30);
+            CustomFrequencyInput.Location = new Point(231, 30);
             CustomFrequencyInput.Name = "CustomFrequencyInput";
             CustomFrequencyInput.Size = new Size(60, 25);
             CustomFrequencyInput.TabIndex = 10;
@@ -147,10 +147,10 @@
             // 
             // groupBox2
             // 
-            groupBox2.Controls.Add(button2);
-            groupBox2.Controls.Add(button1);
-            groupBox2.Controls.Add(radioButton2);
-            groupBox2.Controls.Add(radioButton1);
+            groupBox2.Controls.Add(StopCursorRecordingButton);
+            groupBox2.Controls.Add(StartCursorRecordingButton);
+            groupBox2.Controls.Add(UseRecordedCursorButton);
+            groupBox2.Controls.Add(UseCurrentPositionButton);
             groupBox2.Location = new Point(9, 218);
             groupBox2.Name = "groupBox2";
             groupBox2.Size = new Size(297, 131);
@@ -158,45 +158,51 @@
             groupBox2.TabStop = false;
             groupBox2.Text = "点击位置";
             // 
-            // radioButton1
+            // StopCursorRecordingButton
             // 
-            radioButton1.AutoSize = true;
-            radioButton1.Location = new Point(18, 40);
-            radioButton1.Name = "radioButton1";
-            radioButton1.Size = new Size(117, 21);
-            radioButton1.TabIndex = 0;
-            radioButton1.TabStop = true;
-            radioButton1.Text = "鼠标当前位置";
-            radioButton1.UseVisualStyleBackColor = true;
+            StopCursorRecordingButton.Enabled = false;
+            StopCursorRecordingButton.Location = new Point(146, 94);
+            StopCursorRecordingButton.Name = "StopCursorRecordingButton";
+            StopCursorRecordingButton.Size = new Size(83, 25);
+            StopCursorRecordingButton.TabIndex = 3;
+            StopCursorRecordingButton.Text = "结束录制";
+            StopCursorRecordingButton.UseVisualStyleBackColor = true;
+            StopCursorRecordingButton.Click += StopCursorRecordingButton_Click;
             // 
-            // radioButton2
+            // StartCursorRecordingButton
             // 
-            radioButton2.AutoSize = true;
-            radioButton2.Location = new Point(18, 67);
-            radioButton2.Name = "radioButton2";
-            radioButton2.Size = new Size(120, 21);
-            radioButton2.TabIndex = 1;
-            radioButton2.TabStop = true;
-            radioButton2.Text = "预录鼠标轨迹";
-            radioButton2.UseVisualStyleBackColor = true;
+            StartCursorRecordingButton.Enabled = false;
+            StartCursorRecordingButton.Location = new Point(36, 94);
+            StartCursorRecordingButton.Name = "StartCursorRecordingButton";
+            StartCursorRecordingButton.Size = new Size(83, 25);
+            StartCursorRecordingButton.TabIndex = 2;
+            StartCursorRecordingButton.Text = "开始录制";
+            StartCursorRecordingButton.UseVisualStyleBackColor = true;
+            StartCursorRecordingButton.Click += StartCursorRecordingButton_Click;
             // 
-            // button1
+            // UseRecordedCursorButton
             // 
-            button1.Location = new Point(36, 94);
-            button1.Name = "button1";
-            button1.Size = new Size(83, 25);
-            button1.TabIndex = 2;
-            button1.Text = "开始录制";
-            button1.UseVisualStyleBackColor = true;
+            UseRecordedCursorButton.AutoSize = true;
+            UseRecordedCursorButton.Location = new Point(18, 67);
+            UseRecordedCursorButton.Name = "UseRecordedCursorButton";
+            UseRecordedCursorButton.Size = new Size(120, 21);
+            UseRecordedCursorButton.TabIndex = 1;
+            UseRecordedCursorButton.Text = "预录鼠标轨迹";
+            UseRecordedCursorButton.UseVisualStyleBackColor = true;
+            UseRecordedCursorButton.CheckedChanged += UseRecordedCursorButton_CheckedChanged;
             // 
-            // button2
+            // UseCurrentPositionButton
             // 
-            button2.Location = new Point(146, 94);
-            button2.Name = "button2";
-            button2.Size = new Size(83, 25);
-            button2.TabIndex = 3;
-            button2.Text = "结束录制";
-            button2.UseVisualStyleBackColor = true;
+            UseCurrentPositionButton.AutoSize = true;
+            UseCurrentPositionButton.Checked = true;
+            UseCurrentPositionButton.Location = new Point(18, 40);
+            UseCurrentPositionButton.Name = "UseCurrentPositionButton";
+            UseCurrentPositionButton.Size = new Size(117, 21);
+            UseCurrentPositionButton.TabIndex = 0;
+            UseCurrentPositionButton.TabStop = true;
+            UseCurrentPositionButton.Text = "鼠标当前位置";
+            UseCurrentPositionButton.UseVisualStyleBackColor = true;
+            UseCurrentPositionButton.CheckedChanged += UseCurrentPositionButton_CheckedChanged;
             // 
             // groupBox3
             // 
@@ -245,10 +251,10 @@
         private NumericUpDown CustomFrequencyInput;
         private GroupBox groupBox1;
         private GroupBox groupBox2;
-        private RadioButton radioButton1;
-        private Button button2;
-        private Button button1;
-        private RadioButton radioButton2;
+        private RadioButton UseCurrentPositionButton;
+        private Button StopCursorRecordingButton;
+        private Button StartCursorRecordingButton;
+        private RadioButton UseRecordedCursorButton;
         private GroupBox groupBox3;
     }
 }
