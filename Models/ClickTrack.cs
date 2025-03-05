@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace 连点器
+namespace 连点器.Models
 {
     internal class ClickTrack
     {

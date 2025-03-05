@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 [StructLayout(LayoutKind.Sequential)]
-public struct HookStruct
+public struct HookStructs
 {
     public POINT pt;
     public IntPtr hwnd;

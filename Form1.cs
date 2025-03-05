@@ -3,6 +3,7 @@ using System;
 using System.Diagnostics;
 using System.Drawing;
 using System.Runtime.InteropServices;
+using 连点器.Lib;
 
 namespace 连点器
 {
@@ -14,7 +15,6 @@ namespace 连点器
         private bool likeHuman = true;
         private bool inProcess = false;
         private bool useCurrentPosition = true;
-        private static bool continueClicking = true;
 
         // per second
         private decimal Frequency = 3;
@@ -28,43 +28,11 @@ namespace 连点器
         private readonly int Countdown = 1;
 
         private static Logger logger;
+
         private readonly ClickStimulator ClickStimulator;
 
-        private static ClickTracks ClickTracks = new ClickTracks();
-
-        // Import the necessary functions from user32.dll
-        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        private static extern IntPtr SetWindowsHookEx(int idHook, MouseProc lpfn, IntPtr hMod, uint dwThreadId);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        private static extern IntPtr SetWindowsHookEx(int idHook, KeyBoardProc lpfn, IntPtr hMod, uint dwThreadId);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        [return: MarshalAs(UnmanagedType.Bool)]
-        private static extern bool UnhookWindowsHookEx(IntPtr hhk);
-
-        [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        private static extern IntPtr CallNextHookEx(IntPtr hhk, int nCode, IntPtr wParam, IntPtr lParam);
-
-        [DllImport("kernel32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
-        private static extern IntPtr GetModuleHandle(string lpModuleName);
-
-
-
-        private const int WH_MOUSE_LL = 14;
-        private const int WM_LBUTTONDOWN = 0x0201;
-        private static MouseProc _mouseProc = MouseHookCallback;
-        private delegate IntPtr MouseProc(int nCode, IntPtr wParam, IntPtr lParam);
-        private static IntPtr _mouseHookID = IntPtr.Zero;
-
-        private const int WH_KEYBOARD_LL = 13;
-        private const int WM_KEYDOWN = 0x0100;
-        private const int VK_ESCAPE = 0x1B;
-        private static KeyBoardProc _keyProc = KeyHookCallback;
-        private delegate IntPtr KeyBoardProc(int nCode, IntPtr wParam, IntPtr lParam);
-        private static IntPtr _keyHookID = IntPtr.Zero;
-
-
+        internal MouseHook MouseHook { get; }
+        internal KeyHook KeyHook { get; }
 
         public Form1()
         {
@@ -75,6 +43,9 @@ namespace 连点器
             EndDateTimePicker.Format = DateTimePickerFormat.Custom;
             EndDateTimePicker.CustomFormat = "MM/dd/yyyy hh:mm:ss";
             EndDateTimePicker.Value = DateTime.Now;
+
+            MouseHook = new MouseHook();
+            KeyHook = new KeyHook();
         }
 
         private async void StartBtn_Click(object sender, EventArgs e)
@@ -86,11 +57,11 @@ namespace 连点器
             logger.Log($"Count down for {Countdown} seconds to start");
             await Task.Delay(Countdown * 1000);
 
-            _keyHookID = SetKeyHook(_keyProc);
+            KeyHook._keyHookID = KeyHook.SetKeyHook();
 
-            continueClicking = true;
+            KeyHook.continueClicking = true;
 
-            while (continueClicking && DateTime.Now <= EndDateTime)
+            while (KeyHook.continueClicking && DateTime.Now <= EndDateTime)
             {
                 if (useCurrentPosition)
                 {
@@ -109,9 +80,9 @@ namespace 连点器
                 }
                 else
                 {
-                    foreach (var track in ClickTracks.Tracks)
+                    foreach (var track in MouseHook.ClickTracks.Tracks)
                     {
-                        if (continueClicking)
+                        if (KeyHook.continueClicking)
                         {
                             ClickStimulator.StimulateClickAt(track.Position);
                             await Task.Delay(track.waitTimeBeforeNextClick);
@@ -143,10 +114,10 @@ namespace 连点器
 
         private void StopButton_Click(object sender, EventArgs e)
         {
-            UnhookWindowsHookEx(_keyHookID);
-            UnhookWindowsHookEx(_mouseHookID);
+            MouseHook.UnhookMouse();
+            KeyHook.UnhookKey();
 
-            continueClicking = false;
+            KeyHook.continueClicking = false;
             StartStopButtonSwitch(false);
 
             logger.Log("Stop and ready to restart.");
@@ -171,19 +142,19 @@ namespace 连点器
 
         private void StartCursorRecordingButton_Click(object sender, EventArgs e)
         {
-            ClickTracks.ClearTracks();
-            _mouseHookID = SetMouseHook(_mouseProc);
+            MouseHook.ClickTracks.ClearTracks();
+            MouseHook._mouseHookID = MouseHook.SetMouseHook();
 
             logger.Log($"In recording mode.");
         }
 
         private void StopCursorRecordingButton_Click(object sender, EventArgs e)
         {
-            UnhookWindowsHookEx(_mouseHookID);
+            MouseHook.UnhookMouse();
 
             // order tracks and populate waittime
-            ClickTracks.PopulateWaitTime();
-            logger.Log($"End recording. Click traks: {ClickTracks.Print()}");
+            MouseHook.ClickTracks.PopulateWaitTime();
+            logger.Log($"End recording. Click traks: {MouseHook.ClickTracks.Print()}");
         }
 
         private void StartStopButtonSwitch(bool inProgress)
@@ -254,57 +225,10 @@ namespace 连点器
             }
         }
 
-        private static IntPtr SetMouseHook(MouseProc proc)
-        {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                return SetWindowsHookEx(WH_MOUSE_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
-            }
-        }
-
-        private static IntPtr SetKeyHook(KeyBoardProc proc)
-        {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                return SetWindowsHookEx(WH_KEYBOARD_LL, proc, GetModuleHandle(curModule.ModuleName), 0);
-            }
-        }
-
-        private static IntPtr MouseHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0 && wParam == (IntPtr)WM_LBUTTONDOWN)
-            {
-                // Cast lParam to MOUSEHOOKSTRUCT
-                HookStruct mouseHookStruct = Marshal.PtrToStructure<HookStruct>(lParam);
-
-                // Add the track to ClickTracks
-                ClickTracks.AddTrack(new Point(mouseHookStruct.pt.x, mouseHookStruct.pt.y));
-            }
-            return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
-        }
-
-        private static IntPtr KeyHookCallback(int nCode, IntPtr wParam, IntPtr lParam)
-        {
-            if (nCode >= 0 && wParam == (IntPtr)WM_KEYDOWN)
-            {
-                // Marshal the lParam to a KBDLLHOOKSTRUCT
-                KBDLLHOOKSTRUCT kbHookStruct = Marshal.PtrToStructure<KBDLLHOOKSTRUCT>(lParam);
-
-                // Check if the key pressed is VK_ESCAPE
-                if (kbHookStruct.vkCode == VK_ESCAPE)
-                {
-                    continueClicking = false;
-                }
-            }
-            return CallNextHookEx(_keyHookID, nCode, wParam, lParam);
-        }
-
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            UnhookWindowsHookEx(_mouseHookID);
-            UnhookWindowsHookEx(_keyHookID);
+            MouseHook.UnhookMouse();
+            KeyHook.UnhookKey();
             base.OnFormClosed(e);
         }
 

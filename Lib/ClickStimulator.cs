@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 
-namespace 连点器
+namespace 连点器.Lib
 {
     internal class ClickStimulator
     {
