@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
+﻿
 namespace 连点器.Models
 {
     internal class ClickTrack
@@ -12,7 +7,12 @@ namespace 连点器.Models
 
         internal DateTime Time { get; set; }
 
-        internal int waitTimeBeforeNextClick { get; set; } 
-        
+        internal int waitTimeBeforeNextClick { get; set; }
+
+        internal string GetCorodinates()
+        {
+            return Position.X + ", " + Position.Y;
+        }
+
     }
 }

@@ -1,9 +1,5 @@
-
-using System;
-using System.Diagnostics;
-using System.Drawing;
-using System.Runtime.InteropServices;
 using 连点器.Lib;
+using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 
 namespace 连点器
 {
@@ -15,6 +11,8 @@ namespace 连点器
         private bool likeHuman = true;
         private bool inProcess = false;
         private bool useCurrentPosition = true;
+        private bool inRecording = false;
+        private bool addNewPoint = false;
 
         // per second
         private decimal Frequency = 3;
@@ -51,7 +49,7 @@ namespace 连点器
         private async void StartBtn_Click(object sender, EventArgs e)
         {
             if (!DatetimeValidator()) return;
-            
+
             StartStopButtonSwitch(true);
 
             logger.Log($"Count down for {Countdown} seconds to start");
@@ -65,20 +63,24 @@ namespace 连点器
             {
                 if (useCurrentPosition)
                 {
-                    ClickStimulator.StimulateClickAtCurrentPosition();
-                    if (likeHuman)
+                    if (KeyHook.continueClicking)
                     {
-                        var interval = GetRamdomClickInterval();
-                        await Task.Delay(interval);
-                        logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
+                        ClickStimulator.StimulateClickAtCurrentPosition();
+                        if (likeHuman)
+                        {
+                            var interval = GetRamdomClickInterval();
+                            await Task.Delay(interval);
+                            logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
+                        }
+                        else
+                        {
+                            await Task.Delay(Interval);
+                            logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {Interval}s.");
+                        }
                     }
-                    else
-                    {
-                        await Task.Delay(Interval);
-                        logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {Interval}s.");
-                    }
+
                 }
-                else
+                else if (inRecording)
                 {
                     foreach (var track in MouseHook.ClickTracks.Tracks)
                     {
@@ -87,6 +89,27 @@ namespace 连点器
                             ClickStimulator.StimulateClickAt(track.Position);
                             await Task.Delay(track.waitTimeBeforeNextClick);
                             logger.Append($"Waiting for {track.waitTimeBeforeNextClick / 1000}s.");
+                        }
+                    }
+                }
+                else if (addNewPoint)
+                {
+                    foreach (var track in MouseHook.ClickTracks.Tracks)
+                    {
+                        if (KeyHook.continueClicking)
+                        {
+                            ClickStimulator.StimulateClickAt(track.Position);
+                            if (likeHuman)
+                            {
+                                var interval = GetRamdomClickInterval();
+                                await Task.Delay(interval);
+                                logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
+                            }
+                            else
+                            {
+                                await Task.Delay(Interval);
+                                logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {Interval}s.");
+                            }
                         }
                     }
                 }
@@ -131,13 +154,35 @@ namespace 连点器
 
         private void UseCurrentPositionButton_CheckedChanged(object sender, EventArgs e)
         {
-            CursorPositionModeSwitching(UseCurrentPositionButton.Checked);
+            if (UseCurrentPositionButton.Checked)
+            {
+                useCurrentPosition = true;
+                inRecording = false;
+                addNewPoint = false;
+                CursoModeSwitching();
+            }
         }
 
         private void UseRecordedCursorButton_CheckedChanged(object sender, EventArgs e)
         {
-            CursorPositionModeSwitching(!UseRecordedCursorButton.Checked);
+            if (UseRecordedCursorButton.Checked)
+            {
+                useCurrentPosition = false;
+                inRecording = true;
+                addNewPoint = false;
+                CursoModeSwitching();
+            }
+        }
 
+        private void AddNewPointButton_CheckedChanged(object sender, EventArgs e)
+        {
+            if (AddNewPointButton.Checked)
+            {
+                useCurrentPosition = false;
+                inRecording = false;
+                addNewPoint = true;
+                CursoModeSwitching();
+            }
         }
 
         private void StartCursorRecordingButton_Click(object sender, EventArgs e)
@@ -154,6 +199,7 @@ namespace 连点器
 
             // order tracks and populate waittime
             MouseHook.ClickTracks.PopulateWaitTime();
+            PopulatePointBoxes();
             logger.Log($"End recording. Click traks: {MouseHook.ClickTracks.Print()}");
         }
 
@@ -185,23 +231,32 @@ namespace 连点器
 
         }
 
-        private void CursorPositionModeSwitching(bool useCurrent)
+        private void CursoModeSwitching()
         {
-            useCurrentPosition = useCurrent;
-            if (useCurrent)
+            if (useCurrentPosition)
             {
-                UseRecordedCursorButton.Checked = !useCurrentPosition;
-                StartCursorRecordingButton.Enabled = !useCurrentPosition;
-                StopCursorRecordingButton.Enabled = !useCurrentPosition;
+                UseRecordedCursorButton.Checked = false;
+                AddNewPointButton.Checked = false;
+
                 logger.Log("Use current cursor position");
             }
-            else
+            else if (inRecording)
             {
-                UseCurrentPositionButton.Checked = useCurrent;
-                StartCursorRecordingButton.Enabled = !useCurrentPosition;
-                StopCursorRecordingButton.Enabled = !useCurrentPosition;
+                UseCurrentPositionButton.Checked = false;
+                AddNewPointButton.Checked = false;
+
                 logger.Log("Use recorded cursor");
             }
+            else if (addNewPoint)
+            {
+                UseCurrentPositionButton.Checked = false;
+                UseRecordedCursorButton.Checked = false;
+
+                logger.Log("Use add point mode");
+            }
+
+            StartCursorRecordingButton.Enabled = inRecording || addNewPoint;
+            StopCursorRecordingButton.Enabled = inRecording || addNewPoint;
         }
 
         private int GetRamdomClickInterval()
@@ -225,13 +280,31 @@ namespace 连点器
             }
         }
 
+        private void PopulatePointBoxes()
+        {
+            var pointboxes = GetPointBoxes();
+
+            foreach (var track in MouseHook.ClickTracks.Tracks)
+            {
+                var box = GetPointBoxes().FirstOrDefault(x => String.IsNullOrEmpty(x.Text));
+                box.Text = track.GetCorodinates();  
+            }
+
+        }
+
+        private List<TextBox> GetPointBoxes()
+        {
+            var pointboxes = groupBox2.Controls.OfType<TextBox>();
+            pointboxes = pointboxes.OrderBy(x => x.TabIndex);
+
+            return pointboxes.ToList<TextBox>();
+        }
+
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
             MouseHook.UnhookMouse();
             KeyHook.UnhookKey();
             base.OnFormClosed(e);
         }
-
-
     }
 }

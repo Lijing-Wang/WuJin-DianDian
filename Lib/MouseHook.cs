@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using 连点器.Models;
 
 namespace 连点器.Lib
@@ -23,10 +18,6 @@ namespace 连点器.Lib
         internal static nint _mouseHookID = nint.Zero;
 
         internal static ClickTracks ClickTracks  = new ClickTracks();
-
-        internal MouseHook()
-        {
-        }
 
         internal static nint SetMouseHook()
         {

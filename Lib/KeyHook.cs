@@ -1,10 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Diagnostics;
-using System.Linq;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading.Tasks;
 using 连点器.Models;
 
 namespace 连点器.Lib
@@ -23,10 +18,6 @@ namespace 连点器.Lib
         internal static nint _keyHookID = nint.Zero;
 
         internal static bool continueClicking = false;
-
-        internal KeyHook()
-        {
-        }
 
         internal static nint SetKeyHook()
         {
@@ -55,6 +46,7 @@ namespace 连点器.Lib
 
         internal void UnhookKey()
         {
+            continueClicking = false;
             UnhookWindowsHookEx(_keyHookID);
         }
     }
