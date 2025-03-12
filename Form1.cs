@@ -6,160 +6,169 @@ namespace 连点器
     public partial class Form1 : Form
     {
 
-        private static DateTime EndDateTime;
+        private static DateTime _endDateTime;
+        private bool _likeHuman = true;
+        private bool _inProcess = false;
+        private bool _useCurrentPosition = true;
+        private bool _inRecording = false;
+        private bool _addNewPoint = false;
 
-        private bool likeHuman = true;
-        private bool inProcess = false;
-        private bool useCurrentPosition = true;
-        private bool inRecording = false;
-        private bool addNewPoint = false;
+        // number is in x/per second
+        private decimal _frequency = 3;
+        // number is in milliseconds
+        private int _interval = 333;
 
-        // per second
-        private decimal Frequency = 3;
-        private int Interval = 333;
+        // used in human-like clicking mode, randomly draw a frequency
+        // number is in seconds
+        private List<double> _clickWaitTimeChoices = new List<double> { 1, 0.5, 0.3 };
 
-        // randomly draw a choice to minic human clicking behavior
-        // in seconds
-        private List<double> ClickWaitTimeChoices = new List<double> { 1, 0.5, 0.3 };
+        // countdown time for mouse to get ready
+        // number is in seconds
+        private readonly int _countdown = 1;
 
-        // countdown time for mouse to get ready - seconds
-        private readonly int Countdown = 1;
+        private static Logger _logger;
 
-        private static Logger logger;
+        private readonly ClickStimulator _clickStimulator;
 
-        private readonly ClickStimulator ClickStimulator;
-
-        internal MouseHook MouseHook { get; }
-        internal KeyHook KeyHook { get; }
+        private readonly MouseHook _mouseHook;
+        private readonly KeyHook _keyHook;
 
         public Form1()
         {
             InitializeComponent();
-            logger = new Logger(ResultBox);
-            ClickStimulator = new ClickStimulator(ResultBox);
+            _logger = new Logger(ResultBox);
+            _clickStimulator = new ClickStimulator(ResultBox);
 
             EndDateTimePicker.Format = DateTimePickerFormat.Custom;
             EndDateTimePicker.CustomFormat = "MM/dd/yyyy hh:mm:ss";
             EndDateTimePicker.Value = DateTime.Now;
 
-            MouseHook = new MouseHook();
-            KeyHook = new KeyHook();
+            _mouseHook = new MouseHook();
+            _keyHook = new KeyHook();
         }
 
         private async void StartBtn_Click(object sender, EventArgs e)
         {
-            if (!DatetimeValidator()) return;
+            if (!ValidateDatetime()) return;
 
-            StartStopButtonSwitch(true);
+            ToggleStartStopButton(true);
 
-            logger.Log($"Count down for {Countdown} seconds to start");
-            await Task.Delay(Countdown * 1000);
+            _logger.Log($"Count down for {_countdown} seconds to start");
+            await Task.Delay(_countdown * 1000);
 
-            KeyHook._keyHookID = KeyHook.SetKeyHook();
+            KeyHook.KeyHookID = KeyHook.SetKeyHook();
+            KeyHook.ContinueClicking = true;
 
-            KeyHook.continueClicking = true;
-
-            while (KeyHook.continueClicking && DateTime.Now <= EndDateTime)
+            while (KeyHook.ContinueClicking && DateTime.Now <= _endDateTime)
             {
-                if (useCurrentPosition)
+                if (_useCurrentPosition)
                 {
-                    if (KeyHook.continueClicking)
-                    {
-                        ClickStimulator.StimulateClickAtCurrentPosition();
-                        if (likeHuman)
-                        {
-                            var interval = GetRamdomClickInterval();
-                            await Task.Delay(interval);
-                            logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
-                        }
-                        else
-                        {
-                            await Task.Delay(Interval);
-                            logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {Interval}s.");
-                        }
-                    }
-
+                    await ClickAtCurrentPositionWithCustomFrequency();
                 }
-                else if (inRecording)
+                else if (_inRecording)
                 {
-                    foreach (var track in MouseHook.ClickTracks.Tracks)
-                    {
-                        if (KeyHook.continueClicking)
-                        {
-                            ClickStimulator.StimulateClickAt(track.Position);
-                            await Task.Delay(track.waitTimeBeforeNextClick);
-                            logger.Append($"Waiting for {track.waitTimeBeforeNextClick / 1000}s.");
-                        }
-                    }
+                    await ReplayRecordedClicks();
                 }
-                else if (addNewPoint)
+                else if (_addNewPoint)
                 {
-                    foreach (var track in MouseHook.ClickTracks.Tracks)
-                    {
-                        if (KeyHook.continueClicking)
-                        {
-                            ClickStimulator.StimulateClickAt(track.Position);
-                            if (likeHuman)
-                            {
-                                var interval = GetRamdomClickInterval();
-                                await Task.Delay(interval);
-                                logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
-                            }
-                            else
-                            {
-                                await Task.Delay(Interval);
-                                logger.Append($"{(likeHuman ? "human-like mode" : "machine mode")}: {Interval}s.");
-                            }
-                        }
-                    }
+                    await ClickAtRecordedPointWithCustomFrequency();
                 }
             }
 
-            logger.Append("End clicking");
+            _logger.Append("End clicking");
+        }
+
+        private async Task ClickAtCurrentPositionWithCustomFrequency()
+        {
+            if (KeyHook.ContinueClicking)
+            {
+                _clickStimulator.StimulateClickAtCurrentPosition();
+                await WaitForNextClick();
+            }
+        }
+
+        private async Task ReplayRecordedClicks()
+        {
+            foreach (var track in MouseHook.ClickTracks.Tracks)
+            {
+                if (KeyHook.ContinueClicking)
+                {
+                    _clickStimulator.StimulateClickAt(track.Position);
+                    await Task.Delay(track.WaitTimeBeforeNextClick);
+                    _logger.Append($"Waiting for {track.WaitTimeBeforeNextClick / 1000}s.");
+                }
+            }
+        }
+
+        private async Task ClickAtRecordedPointWithCustomFrequency()
+        {
+            foreach (var track in MouseHook.ClickTracks.Tracks)
+            {
+                if (KeyHook.ContinueClicking)
+                {
+                    _clickStimulator.StimulateClickAt(track.Position);
+                    await WaitForNextClick();
+                }
+            }
+        }
+
+        private async Task WaitForNextClick()
+        {
+            if (_likeHuman)
+            {
+                var interval = GetRandomClickInterval();
+                await Task.Delay(interval);
+                _logger.Append($"{(_likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
+            }
+            else
+            {
+                await Task.Delay(_interval);
+                _logger.Append($"{(_likeHuman ? "human-like mode" : "machine mode")}: {_interval}s.");
+            }
         }
 
         private void EndDateTimePicker_ValueChanged(object sender, EventArgs e)
         {
-            EndDateTime = EndDateTimePicker.Value;
-            DatetimeValidator();
+            _endDateTime = EndDateTimePicker.Value;
+            ValidateDatetime();
         }
 
         private void LikeMachineClickControl_CheckedChanged(object sender, EventArgs e)
         {
-            ClickingModeButtonSwich(!LikeMachineClickControl.Checked);
+            UpdateClickingFrequency(!LikeMachineClickControl.Checked);
         }
 
         private void LikeHumanClickControl_CheckedChanged(object sender, EventArgs e)
         {
 
-            ClickingModeButtonSwich(LikeHumanClickControl.Checked);
+            UpdateClickingFrequency(LikeHumanClickControl.Checked);
         }
 
         private void StopButton_Click(object sender, EventArgs e)
         {
-            MouseHook.UnhookMouse();
-            KeyHook.UnhookKey();
+            _mouseHook.UnhookMouse();
+            _keyHook.UnhookKey();
 
-            KeyHook.continueClicking = false;
-            StartStopButtonSwitch(false);
+            KeyHook.ContinueClicking = false;
+            ToggleStartStopButton(false);
 
-            logger.Log("Stop and ready to restart.");
+            _logger.Log("Stop and ready to restart.");
         }
 
         private void CustomFrequencyInput_ValueChanged(object sender, EventArgs e)
         {
-            Frequency = CustomFrequencyInput.Value;
-            Interval = (int)(1000 / Frequency);
+            _frequency = CustomFrequencyInput.Value;
+            _interval = (int)(1000 / _frequency);
         }
 
         private void UseCurrentPositionButton_CheckedChanged(object sender, EventArgs e)
         {
             if (UseCurrentPositionButton.Checked)
             {
-                useCurrentPosition = true;
-                inRecording = false;
-                addNewPoint = false;
-                CursoModeSwitching();
+                _useCurrentPosition = true;
+                _inRecording = false;
+                _addNewPoint = false;
+                SwitchClickingMode();
             }
         }
 
@@ -167,10 +176,10 @@ namespace 连点器
         {
             if (UseRecordedCursorButton.Checked)
             {
-                useCurrentPosition = false;
-                inRecording = true;
-                addNewPoint = false;
-                CursoModeSwitching();
+                _useCurrentPosition = false;
+                _inRecording = true;
+                _addNewPoint = false;
+                SwitchClickingMode();
             }
         }
 
@@ -178,104 +187,105 @@ namespace 连点器
         {
             if (AddNewPointButton.Checked)
             {
-                useCurrentPosition = false;
-                inRecording = false;
-                addNewPoint = true;
-                CursoModeSwitching();
+                _useCurrentPosition = false;
+                _inRecording = false;
+                _addNewPoint = true;
+                SwitchClickingMode();
             }
         }
 
         private void StartCursorRecordingButton_Click(object sender, EventArgs e)
         {
             MouseHook.ClickTracks.ClearTracks();
-            MouseHook._mouseHookID = MouseHook.SetMouseHook();
+            MouseHook.MouseHookID = MouseHook.SetMouseHook();
 
-            logger.Log($"In recording mode.");
+            _logger.Log($"In recording mode.");
         }
 
         private void StopCursorRecordingButton_Click(object sender, EventArgs e)
         {
-            MouseHook.UnhookMouse();
+            _mouseHook.UnhookMouse();
 
-            // order tracks and populate waittime
+            // sort out tracks and populate waittime attributes
             MouseHook.ClickTracks.PopulateWaitTime();
+            // populate UI boxes
             PopulatePointBoxes();
-            logger.Log($"End recording. Click traks: {MouseHook.ClickTracks.Print()}");
+
+            _logger.Log($"End recording. Click traks: {MouseHook.ClickTracks.PrintTracks()}");
         }
 
-        private void StartStopButtonSwitch(bool inProgress)
+        private void ToggleStartStopButton(bool inProgress)
         {
-            inProcess = inProgress;
-            StartBtn.Enabled = !inProcess;
-            StopButton.Enabled = inProcess;
+            _inProcess = inProgress;
+            StartBtn.Enabled = !_inProcess;
+            StopButton.Enabled = _inProcess;
         }
 
-        private void ClickingModeButtonSwich(bool likeHumanChecked)
+        private void UpdateClickingFrequency(bool likeHumanChecked)
         {
-            likeHuman = likeHumanChecked;
+            _likeHuman = likeHumanChecked;
 
-            if (likeHuman)
+            if (_likeHuman)
             {
-                LikeMachineClickControl.Checked = !likeHuman;
+                LikeMachineClickControl.Checked = !_likeHuman;
 
-                logger.Log($"Use human-like click mode - click speed from {String.Join("s, ", ClickWaitTimeChoices.ToArray())}");
+                _logger.Log($"Human-like click - speed from {String.Join("s, ", _clickWaitTimeChoices.ToArray())}");
             }
             else
             {
-                LikeHumanClickControl.Checked = likeHuman;
+                LikeHumanClickControl.Checked = _likeHuman;
 
-                logger.Log($"Use custom set click mode - click speed: {Frequency}/second");
+                _logger.Log($"Custom set click - speed: {_frequency}/second");
 
             }
-            CustomFrequencyInput.Enabled = !likeHuman;
-
+            CustomFrequencyInput.Enabled = !_likeHuman;
         }
 
-        private void CursoModeSwitching()
+        private void SwitchClickingMode()
         {
-            if (useCurrentPosition)
+            if (_useCurrentPosition)
             {
                 UseRecordedCursorButton.Checked = false;
                 AddNewPointButton.Checked = false;
 
-                logger.Log("Use current cursor position");
+                _logger.Log("Use current cursor position");
             }
-            else if (inRecording)
+            else if (_inRecording)
             {
                 UseCurrentPositionButton.Checked = false;
                 AddNewPointButton.Checked = false;
 
-                logger.Log("Use recorded cursor");
+                _logger.Log("Use recorded cursor");
             }
-            else if (addNewPoint)
+            else if (_addNewPoint)
             {
                 UseCurrentPositionButton.Checked = false;
                 UseRecordedCursorButton.Checked = false;
 
-                logger.Log("Use add point mode");
+                _logger.Log("Use add-point mode");
             }
 
-            StartCursorRecordingButton.Enabled = inRecording || addNewPoint;
-            StopCursorRecordingButton.Enabled = inRecording || addNewPoint;
+            StartCursorRecordingButton.Enabled = _inRecording || _addNewPoint;
+            StopCursorRecordingButton.Enabled = _inRecording || _addNewPoint;
         }
 
-        private int GetRamdomClickInterval()
+        private int GetRandomClickInterval()
         {
             Random random = new Random();
-            int index = random.Next(ClickWaitTimeChoices.Count);
-            return Convert.ToInt32(ClickWaitTimeChoices[index] * 1000);
+            int index = random.Next(_clickWaitTimeChoices.Count);
+            return Convert.ToInt32(_clickWaitTimeChoices[index] * 1000);
         }
 
-        private bool DatetimeValidator()
+        private static bool ValidateDatetime()
         {
-            if (EndDateTime > DateTime.Now)
+            if (_endDateTime > DateTime.Now)
             {
-                logger.Log($"Set end date time to {EndDateTime}");
+                _logger.Log($"Set end date time to {_endDateTime}");
                 return true;
             }
             else
             {
-                logger.Log("ERROR: Change time picker as it is in the past");
+                _logger.Log("ERROR: Change time picker as it is in the past");
                 return false;
             }
         }
@@ -302,8 +312,8 @@ namespace 连点器
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
-            MouseHook.UnhookMouse();
-            KeyHook.UnhookKey();
+            _mouseHook.UnhookMouse();
+            _keyHook.UnhookKey();
             base.OnFormClosed(e);
         }
     }

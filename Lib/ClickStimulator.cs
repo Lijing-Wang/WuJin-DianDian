@@ -3,7 +3,7 @@
 
 namespace 连点器.Lib
 {
-    internal class ClickStimulator
+    internal class ClickStimulator(TextBox resultBox)
     {
         [DllImport("user32.dll")]
         [return: MarshalAs(UnmanagedType.Bool)]
@@ -19,27 +19,22 @@ namespace 连点器.Lib
         internal const int MOUSEEVENTF_LEFTDOWN = 0x02;
         internal const int MOUSEEVENTF_LEFTUP = 0x04;
 
-        private readonly Logger logger;
-
-        public ClickStimulator(TextBox resultBox)
-        {
-            logger = new Logger(resultBox);
-        }
+        private readonly Logger _logger = new Logger(resultBox);
 
         internal void StimulateClickAtCurrentPosition()
         {
-            Point CurrentCursorPosition;
-            var findPoint = GetCursorPos(out CurrentCursorPosition);
+            Point currentCursorPosition;
+            var findPoint = GetCursorPos(out currentCursorPosition);
             if (findPoint)
             {
-                int x = CurrentCursorPosition.X;
-                int y = CurrentCursorPosition.Y;
+                int x = currentCursorPosition.X;
+                int y = currentCursorPosition.Y;
                 mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, x, y, 0, 0);
-                logger.Append($"Clicked at {x}, {y}.");
+                _logger.Append($"Clicked at {x}, {y}.");
             }
             else
             {
-                logger.Append("Failed to get cursor position");
+                _logger.Append("Failed to get cursor position");
             }
         }
 
@@ -47,7 +42,7 @@ namespace 连点器.Lib
         {
             SetCursorPos(point.X, point.Y);
             mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, point.X, point.Y, 0, 0);
-            logger.Append($"Clicked at {point.X}, {point.Y}.");
+            _logger.Append($"Clicked at {point.X}, {point.Y}.");
         }
     }
 }

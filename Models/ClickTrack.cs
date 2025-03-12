@@ -7,7 +7,7 @@ namespace 连点器.Models
 
         internal DateTime Time { get; set; }
 
-        internal int waitTimeBeforeNextClick { get; set; }
+        internal int WaitTimeBeforeNextClick { get; set; }
 
         internal string GetCorodinates()
         {

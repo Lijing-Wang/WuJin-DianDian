@@ -37,7 +37,7 @@ namespace 连点器.Lib
             {
                 var current = Tracks[i];
                 var next = Tracks[i + 1];
-                current.waitTimeBeforeNextClick = (int)(next.Time - current.Time).TotalMilliseconds;
+                current.WaitTimeBeforeNextClick = (int)(next.Time - current.Time).TotalMilliseconds;
             }
         }
         internal void ClearTracks()
@@ -45,12 +45,12 @@ namespace 连点器.Lib
             Tracks.Clear();
         }
 
-        internal string Print()
+        internal string PrintTracks()
         {
             var result = "";
             foreach (var track in Tracks)
             {
-                result += $"Clicked {track.Position.X} {track.Position.Y}, WaitTime: {track.waitTimeBeforeNextClick}. {Environment.NewLine}";
+                result += $"Clicked {track.Position.X} {track.Position.Y}, WaitTime: {track.WaitTimeBeforeNextClick}. {Environment.NewLine}";
             }
 
             return result;

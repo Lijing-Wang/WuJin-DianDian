@@ -15,7 +15,8 @@ namespace 连点器.Lib
         private const int WM_LBUTTONDOWN = 0x0201;
         private static MouseProc _mouseProc = MouseHookCallback;
         private delegate nint MouseProc(int nCode, nint wParam, nint lParam);
-        internal static nint _mouseHookID = nint.Zero;
+
+        internal static nint MouseHookID = nint.Zero;
 
         internal static ClickTracks ClickTracks  = new ClickTracks();
 
@@ -38,12 +39,12 @@ namespace 连点器.Lib
                 // Add the track to ClickTracks
                 ClickTracks.AddTrack(new Point(mouseHookStruct.pt.x, mouseHookStruct.pt.y));
             }
-            return CallNextHookEx(_mouseHookID, nCode, wParam, lParam);
+            return CallNextHookEx(MouseHookID, nCode, wParam, lParam);
         }
 
         internal void UnhookMouse()
         {
-            UnhookWindowsHookEx(_mouseHookID);
+            UnhookWindowsHookEx(MouseHookID);
         }
     }
 }

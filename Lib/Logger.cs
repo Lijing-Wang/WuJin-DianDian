@@ -1,25 +1,18 @@
 ﻿
 namespace 连点器.Lib
 {
-    internal class Logger
+    internal class Logger(TextBox resultBox)
     {
-        internal TextBox ResultBox { get; set; }
-
-        public Logger(TextBox resultBox)
-        {
-            ResultBox = resultBox;
-        }
-
         internal void Append(string message)
         {
-            ResultBox.AppendText(Environment.NewLine);
-            ResultBox.AppendText(Environment.NewLine);
-            ResultBox.AppendText(message);
+            resultBox.AppendText(Environment.NewLine);
+            resultBox.AppendText(Environment.NewLine);
+            resultBox.AppendText(message);
         }
 
         internal void Log(string message)
         {
-            ResultBox.Text = message;
+            resultBox.Text = message;
         }
     }
 }

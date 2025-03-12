@@ -15,9 +15,9 @@ namespace 连点器.Lib
         private const int VK_ESCAPE = 0x1B;
         private static KeyBoardProc _keyProc = KeyHookCallback;
         private delegate nint KeyBoardProc(int nCode, nint wParam, nint lParam);
-        internal static nint _keyHookID = nint.Zero;
+        internal static nint KeyHookID = nint.Zero;
 
-        internal static bool continueClicking = false;
+        internal static bool ContinueClicking = false;
 
         internal static nint SetKeyHook()
         {
@@ -38,16 +38,16 @@ namespace 连点器.Lib
                 // Check if the key pressed is VK_ESCAPE
                 if (kbHookStruct.vkCode == VK_ESCAPE)
                 {
-                    continueClicking = false;
+                    ContinueClicking = false;
                 }
             }
-            return CallNextHookEx(_keyHookID, nCode, wParam, lParam);
+            return CallNextHookEx(KeyHookID, nCode, wParam, lParam);
         }
 
         internal void UnhookKey()
         {
-            continueClicking = false;
-            UnhookWindowsHookEx(_keyHookID);
+            ContinueClicking = false;
+            UnhookWindowsHookEx(KeyHookID);
         }
     }
 }

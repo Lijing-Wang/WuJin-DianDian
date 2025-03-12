@@ -391,7 +391,7 @@
             Controls.Add(ResultBox);
             Controls.Add(StartBtn);
             Name = "Form1";
-            Text = "·";
+            Text = " ";
             ((System.ComponentModel.ISupportInitialize)CustomFrequencyInput).EndInit();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
