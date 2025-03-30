@@ -18,15 +18,32 @@ namespace 连点器.Lib
 
         internal static nint MouseHookID = nint.Zero;
 
-        internal static ClickTracks ClickTracks  = new ClickTracks();
+        internal static RecordedPlan MarchPlan  = new RecordedPlan();
+        internal static RecordedPlan HealPlan = new RecordedPlan();
 
-        internal static nint SetMouseHook()
+        internal static string PlanNameInRecording { get; set; } = "";
+
+        internal static RecordedPlan GetRecordedPlan(string planName)
         {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
+            return planName == RecordedPlanName.March ? MarchPlan : HealPlan;
+        }
+
+        internal static nint SetMouseHook(string recordedPlanName)
+        {
+            PlanNameInRecording = recordedPlanName;
+
+            if(PlanNameInRecording == RecordedPlanName.March)
             {
-                return SetWindowsHookEx(WH_MOUSE_LL, _mouseProc, GetModuleHandle(curModule.ModuleName), 0);
+                MarchPlan.NewTrack();
             }
+            else if (PlanNameInRecording == RecordedPlanName.Heal)
+            {
+                HealPlan.NewTrack();
+            }
+
+            using Process curProcess = Process.GetCurrentProcess();
+            using ProcessModule curModule = curProcess.MainModule;
+            return SetWindowsHookEx(WH_MOUSE_LL, _mouseProc, GetModuleHandle(curModule.ModuleName), 0);
         }
 
         private static nint MouseHookCallback(int nCode, nint wParam, nint lParam)
@@ -37,7 +54,14 @@ namespace 连点器.Lib
                 HookStructs mouseHookStruct = Marshal.PtrToStructure<HookStructs>(lParam);
 
                 // Add the track to ClickTracks
-                ClickTracks.AddTrack(new Point(mouseHookStruct.pt.x, mouseHookStruct.pt.y));
+                if (PlanNameInRecording == RecordedPlanName.March)
+                {
+                    MarchPlan.AddTrack(new Point(mouseHookStruct.pt.x, mouseHookStruct.pt.y));
+                }
+                else if (PlanNameInRecording == RecordedPlanName.Heal)
+                {
+                    HealPlan.AddTrack(new Point(mouseHookStruct.pt.x, mouseHookStruct.pt.y));
+                }
             }
             return CallNextHookEx(MouseHookID, nCode, wParam, lParam);
         }

@@ -2,7 +2,7 @@
 
 namespace 连点器.Models
 {
-    internal class Hook
+    internal abstract class Hook
     {
         [DllImport("user32.dll", CharSet = CharSet.Auto, CallingConvention = CallingConvention.StdCall)]
         [return: MarshalAs(UnmanagedType.Bool)]

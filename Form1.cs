@@ -1,4 +1,10 @@
+using System;
+using System.Diagnostics;
+using System.Diagnostics.Eventing.Reader;
+using System.Numerics;
+using System.Runtime.InteropServices;
 using 连点器.Lib;
+using 连点器.Models;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
 
 namespace 连点器
@@ -7,11 +13,18 @@ namespace 连点器
     {
 
         private static DateTime _endDateTime;
+        // click speed
         private bool _likeHuman = true;
-        private bool _inProcess = false;
-        private bool _useCurrentPosition = true;
-        private bool _inRecording = false;
-        private bool _addNewPoint = false;
+
+        // operation control
+        private bool _isStimulating = false;
+        private bool _isRecording = false;
+
+        // mode control
+        private bool _quickStart = true;
+
+        // recording plan switch
+        private bool _marchRecording = false;
 
         // number is in x/per second
         private decimal _frequency = 3;
@@ -20,7 +33,11 @@ namespace 连点器
 
         // used in human-like clicking mode, randomly draw a frequency
         // number is in seconds
-        private List<double> _clickWaitTimeChoices = new List<double> { 1, 0.5, 0.3 };
+        private List<double> _clickWaitTimeChoices = [1, 0.5, 0.3];
+        // used in advanced replay
+        private List<double> _replayWaitTimeTrend = [0, 1];
+        private List<int> _accelerateReplayRange = [10, 20];
+        private List<int> _decelerateReplayRange = [30, 40];
 
         // countdown time for mouse to get ready
         // number is in seconds
@@ -47,11 +64,14 @@ namespace 连点器
             _keyHook = new KeyHook();
         }
 
+#region "controls"
+
         private async void StartBtn_Click(object sender, EventArgs e)
         {
             if (!ValidateDatetime()) return;
 
-            ToggleStartStopButton(true);
+            _isStimulating = true;
+            ToggleStartStopButton();
 
             _logger.Log($"Count down for {_countdown} seconds to start");
             await Task.Delay(_countdown * 1000);
@@ -61,71 +81,39 @@ namespace 连点器
 
             while (KeyHook.ContinueClicking && DateTime.Now <= _endDateTime)
             {
-                if (_useCurrentPosition)
+                if (_quickStart)
                 {
-                    await ClickAtCurrentPositionWithCustomFrequency();
+                    await RunQuickStartClicks();
                 }
-                else if (_inRecording)
+                else
                 {
-                    await ReplayRecordedClicks();
-                }
-                else if (_addNewPoint)
-                {
-                    await ClickAtRecordedPointWithCustomFrequency();
+                    if (ValidateRecordingPlans())
+                    {
+                        await RunAdvancedClicks();
+                    }
+                    else
+                    {
+                        break;
+                    }
                 }
             }
 
-            _logger.Append("End clicking");
+            _logger.Append("Clicking is paused.");
         }
 
-        private async Task ClickAtCurrentPositionWithCustomFrequency()
+        private void StopButton_Click(object sender, EventArgs e)
         {
-            if (KeyHook.ContinueClicking)
-            {
-                _clickStimulator.StimulateClickAtCurrentPosition();
-                await WaitForNextClick();
-            }
+            _mouseHook.UnhookMouse();
+            _keyHook.UnhookKey();
+
+            KeyHook.ContinueClicking = false;
+            _isStimulating = false;
+
+            ToggleStartStopButton();
+
+            _logger.Log("Stop and ready to restart.");
         }
 
-        private async Task ReplayRecordedClicks()
-        {
-            foreach (var track in MouseHook.ClickTracks.Tracks)
-            {
-                if (KeyHook.ContinueClicking)
-                {
-                    _clickStimulator.StimulateClickAt(track.Position);
-                    await Task.Delay(track.WaitTimeBeforeNextClick);
-                    _logger.Append($"Waiting for {track.WaitTimeBeforeNextClick / 1000}s.");
-                }
-            }
-        }
-
-        private async Task ClickAtRecordedPointWithCustomFrequency()
-        {
-            foreach (var track in MouseHook.ClickTracks.Tracks)
-            {
-                if (KeyHook.ContinueClicking)
-                {
-                    _clickStimulator.StimulateClickAt(track.Position);
-                    await WaitForNextClick();
-                }
-            }
-        }
-
-        private async Task WaitForNextClick()
-        {
-            if (_likeHuman)
-            {
-                var interval = GetRandomClickInterval();
-                await Task.Delay(interval);
-                _logger.Append($"{(_likeHuman ? "human-like mode" : "machine mode")}: {interval}s.");
-            }
-            else
-            {
-                await Task.Delay(_interval);
-                _logger.Append($"{(_likeHuman ? "human-like mode" : "machine mode")}: {_interval}s.");
-            }
-        }
 
         private void EndDateTimePicker_ValueChanged(object sender, EventArgs e)
         {
@@ -135,69 +123,39 @@ namespace 连点器
 
         private void LikeMachineClickControl_CheckedChanged(object sender, EventArgs e)
         {
-            UpdateClickingFrequency(!LikeMachineClickControl.Checked);
+            UpdateClickingFrequencyForQuickStart(!QuickStartLikeMachineClickControl.Checked);
         }
 
         private void LikeHumanClickControl_CheckedChanged(object sender, EventArgs e)
         {
 
-            UpdateClickingFrequency(LikeHumanClickControl.Checked);
-        }
-
-        private void StopButton_Click(object sender, EventArgs e)
-        {
-            _mouseHook.UnhookMouse();
-            _keyHook.UnhookKey();
-
-            KeyHook.ContinueClicking = false;
-            ToggleStartStopButton(false);
-
-            _logger.Log("Stop and ready to restart.");
+            UpdateClickingFrequencyForQuickStart(QuickStartLikeHumanClickControl.Checked);
         }
 
         private void CustomFrequencyInput_ValueChanged(object sender, EventArgs e)
         {
             _frequency = CustomFrequencyInput.Value;
             _interval = (int)(1000 / _frequency);
-        }
 
-        private void UseCurrentPositionButton_CheckedChanged(object sender, EventArgs e)
-        {
-            if (UseCurrentPositionButton.Checked)
-            {
-                _useCurrentPosition = true;
-                _inRecording = false;
-                _addNewPoint = false;
-                SwitchClickingMode();
-            }
-        }
-
-        private void UseRecordedCursorButton_CheckedChanged(object sender, EventArgs e)
-        {
-            if (UseRecordedCursorButton.Checked)
-            {
-                _useCurrentPosition = false;
-                _inRecording = true;
-                _addNewPoint = false;
-                SwitchClickingMode();
-            }
-        }
-
-        private void AddNewPointButton_CheckedChanged(object sender, EventArgs e)
-        {
-            if (AddNewPointButton.Checked)
-            {
-                _useCurrentPosition = false;
-                _inRecording = false;
-                _addNewPoint = true;
-                SwitchClickingMode();
-            }
+            _logger.Log($"Changen machine-like clicking speed to {_frequency}/s");
         }
 
         private void StartCursorRecordingButton_Click(object sender, EventArgs e)
         {
-            MouseHook.ClickTracks.ClearTracks();
-            MouseHook.MouseHookID = MouseHook.SetMouseHook();
+            if (!ValidateRecordingChecks()) return;
+
+            if (_marchRecording)
+            {
+                MouseHook.MouseHookID = MouseHook.SetMouseHook(RecordedPlanName.March);
+            }
+            else
+            {
+                MouseHook.MouseHookID = MouseHook.SetMouseHook(RecordedPlanName.Heal);
+            }
+
+            _isRecording = true;
+
+            ToggleRecordingButton();
 
             _logger.Log($"In recording mode.");
         }
@@ -206,67 +164,355 @@ namespace 连点器
         {
             _mouseHook.UnhookMouse();
 
-            // sort out tracks and populate waittime attributes
-            MouseHook.ClickTracks.PopulateWaitTime();
-            // populate UI boxes
-            PopulatePointBoxes();
+            if (MouseHook.PlanNameInRecording == RecordedPlanName.March)
+            {
+                MouseHook.MarchPlan.PopulateWaitTime();
+            }
+            else if (MouseHook.PlanNameInRecording == RecordedPlanName.Heal)
+            {
+                MouseHook.HealPlan.PopulateWaitTime();
+            }
 
-            _logger.Log($"End recording. Click traks: {MouseHook.ClickTracks.PrintTracks()}");
+            _isRecording = false;
+
+            ToggleRecordingButton();
+
+            _logger.Log($"End recording. Click traks: {(MarchRecordingCheckBox.Checked ? MouseHook.MarchPlan.PrintTracks() : MouseHook.HealPlan.PrintTracks())}");
         }
 
-        private void ToggleStartStopButton(bool inProgress)
+        private void QuickStartRadioBtn_CheckedChanged(object sender, EventArgs e)
         {
-            _inProcess = inProgress;
-            StartBtn.Enabled = !_inProcess;
-            StopButton.Enabled = _inProcess;
+            _quickStart = QuickStartRadioBtn.Checked;
+            ToggleQuickOrAdvancedMode();
         }
 
-        private void UpdateClickingFrequency(bool likeHumanChecked)
+        private void AdvancedRadioBtn_CheckedChanged(object sender, EventArgs e)
         {
-            _likeHuman = likeHumanChecked;
+            _quickStart = !AdvancedRadioBtn.Checked;
+            ToggleQuickOrAdvancedMode();
+        }
 
+        private void MarchRecordingCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (MarchRecordingCheckBox.Checked)
+            {
+                _marchRecording = true;
+                HealRecordingCheckBox.Checked = false;
+                MarchRandomReplayControl.Checked = false;
+            }
+        }
+
+        private void HealRecordingCheckBox_CheckedChanged(object sender, EventArgs e)
+        {
+            if (HealRecordingCheckBox.Checked)
+            {
+                _marchRecording = false;
+                MarchRecordingCheckBox.Checked = true;
+                HealRandomReplayControl.Checked = false;
+            }
+        }
+
+        private void March_LikeHumanClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (MarchLikeHumanClickControl.Checked)
+            {
+                MouseHook.MarchPlan.LikeHuman = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.MarchPlan, nameof(MouseHook.MarchPlan.LikeHuman));
+
+                MarchLikeMachineClickControl.Checked = false;
+                MarchReplayControl.Checked = false;
+                MarchRandomReplayControl.Checked = false;
+            }
+        }
+
+        private void Heal_LikeHumanClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (HealLikeHumanClickControl.Checked)
+            {
+                MouseHook.HealPlan.LikeHuman = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.HealPlan, nameof(MouseHook.HealPlan.LikeHuman));
+
+                HealLikeMachineClickControl.Checked = false;
+                HealReplayControl.Checked = false;
+                HealRandomReplayControl.Checked = false;
+            }
+        }
+
+        private void March_LikeMachineClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (MarchLikeMachineClickControl.Checked)
+            {
+                MouseHook.MarchPlan.LikeMachine = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.MarchPlan, nameof(MouseHook.MarchPlan.LikeMachine));
+
+                MarchLikeHumanClickControl.Checked = false;
+                MarchReplayControl.Checked = false;
+                MarchRandomReplayControl.Checked = false;
+            }
+        }
+
+        private void Heal_LikeMachineClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (HealLikeMachineClickControl.Checked)
+            {
+                MouseHook.HealPlan.LikeMachine = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.HealPlan, nameof(MouseHook.HealPlan.LikeMachine));
+
+                HealLikeHumanClickControl.Checked = false;
+                HealReplayControl.Checked = false;
+                HealRandomReplayControl.Checked = false;
+            }
+        }
+
+        private void March_ReplayClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (MarchReplayControl.Checked)
+            {
+                MouseHook.MarchPlan.Replay = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.MarchPlan, nameof(MouseHook.MarchPlan.Replay));
+
+                MarchLikeMachineClickControl.Checked = false;
+                MarchLikeHumanClickControl.Checked = false;
+                MarchRandomReplayControl.Checked = false;
+            }
+        }
+
+        private void MarchRandomReplayControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (MarchRandomReplayControl.Checked)
+            {
+                MouseHook.MarchPlan.RandomReplay = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.MarchPlan, nameof(MouseHook.MarchPlan.Replay));
+
+                MarchLikeMachineClickControl.Checked = false;
+                MarchLikeHumanClickControl.Checked = false;
+                MarchReplayControl.Checked = false;
+            }
+        }
+
+        private void HealRandomReplayControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (HealRandomReplayControl.Checked)
+            {
+                MouseHook.HealPlan.RandomReplay = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.HealPlan, nameof(MouseHook.HealPlan.Replay));
+
+                HealLikeMachineClickControl.Checked = false;
+                HealLikeHumanClickControl.Checked = false;
+                HealReplayControl.Checked = false;
+            }
+        }
+
+        private void Heal_ReplayClickControl_CheckedChanged(object sender, EventArgs e)
+        {
+            if (HealReplayControl.Checked)
+            {
+                MouseHook.HealPlan.Replay = true;
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.HealPlan, nameof(MouseHook.HealPlan.Replay));
+
+                HealLikeMachineClickControl.Checked = false;
+                HealLikeHumanClickControl.Checked = false;
+            }
+        }
+
+        private void MarchRepeatDurationTextBox_TextChanged(object sender, EventArgs e)
+        {
+            MouseHook.MarchPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(MarchRepeatDurationTextBox.Text));
+
+            _logger.Log($"Set March plan repeat duration. ");
+
+        }
+
+        private void HealRepeatDurationTextBox_TextChanged(object sender, EventArgs e)
+        {
+            MouseHook.HealPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(HealRepeatDurationTextBox.Text));
+
+            _logger.Log($"Set Heal plan repeat duration. ");
+
+        }
+
+#endregion
+
+
+#region "cliks"
+
+        private async Task ReplayRecordedClicks(RecordedPlan plan)
+        {
+            foreach (var track in plan.Tracks)
+            {
+                if (KeyHook.ContinueClicking)
+                {
+                    _clickStimulator.StimulateClickAt(track.Position);
+                    await Task.Delay(track.WaitTimeBeforeNextClick);
+
+                    _logger.Append($"Replay and wait for {track.WaitTimeBeforeNextClick}ms.");
+                }
+            }
+        }
+
+        private async Task RandomlyReplayRecordedClicks(RecordedPlan plan)
+        {
+            foreach (var track in plan.Tracks)
+            {
+                if (KeyHook.ContinueClicking)
+                {
+                    _clickStimulator.StimulateClickAt(track.Position);
+
+                    await Task.Delay(RandomizeRecordedFrequency(track.WaitTimeBeforeNextClick));
+
+                    _logger.Append($"Replay and wait for {track.WaitTimeBeforeNextClick}ms.");
+                }
+            }
+        }
+
+        private int RandomizeRecordedFrequency(int waitTime)
+        {
+            Random random = new Random();
+
+            // randomly pick 0 or 1 to accelarate or slow down
+            var trendIndex = random.Next(_replayWaitTimeTrend.Count);
+            var trend = _replayWaitTimeTrend[trendIndex];
+
+            // accelarate
+            if (trend == 0)
+            {
+                var persantage = random.Next(_accelerateReplayRange[0], _accelerateReplayRange[1]);
+                return Convert.ToInt32(waitTime * 1000 * (1 - persantage / 100));
+            }
+            // slow down
+            else
+            {
+                var persantage = random.Next(_decelerateReplayRange[0], _decelerateReplayRange[1]);
+                return Convert.ToInt32(waitTime * 1000 * (1 + persantage / 100));
+            }
+        }
+
+        private async Task ClickLikeHuman(RecordedPlan? plan = null)
+        {
+            var setting = plan != null ? plan.LikeHuman : _likeHuman;
+
+            // advanced mode
+            if (plan?.Tracks?.Count > 0)
+            {
+                foreach (var track in plan.Tracks)
+                {
+                    if (KeyHook.ContinueClicking)
+                    {
+                        _clickStimulator.StimulateClickAt(track.Position);
+                        await WaitLikeHuman(setting);
+                    }
+                }
+            }
+            // quick start mode
+            else
+            {
+                if (KeyHook.ContinueClicking)
+                {
+                    _clickStimulator.StimulateClickAtCurrentPosition();
+                    await WaitLikeHuman(setting);
+                }
+
+            }
+        }
+
+        private async Task ClickLikeMachine(RecordedPlan? plan = null)
+        {
+            var setting = plan != null ? plan.LikeMachine : !_likeHuman;
+
+            // advanced mode
+            if (plan?.Tracks?.Count > 0)
+            {
+                foreach (var track in plan.Tracks)
+                {
+                    if (KeyHook.ContinueClicking)
+                    {
+                        _clickStimulator.StimulateClickAt(track.Position);
+                        await WaitLikeMachine(setting);
+                    }
+                }
+            }
+            // quick start mode
+            else
+            {
+                if (KeyHook.ContinueClicking)
+                {
+                    _clickStimulator.StimulateClickAtCurrentPosition();
+                    await WaitLikeMachine(setting);
+                }
+
+            }
+        }
+
+        private async Task WaitLikeHuman(bool likeHumanSetting)
+        {
+            var interval = GetRandomClickInterval();
+            await Task.Delay(interval);
+
+            _logger.Append($"{(likeHumanSetting ? "human-like mode" : "machine mode")}: {interval}ms.");
+        }
+
+        private async Task WaitLikeMachine(bool likeMachineSetting)
+        {
+            await Task.Delay(_interval);
+            _logger.Append($"{(likeMachineSetting ? "human-like mode" : "machine mode")}: {_interval}ms.");
+        }
+
+        private async Task RunQuickStartClicks()
+        {
             if (_likeHuman)
             {
-                LikeMachineClickControl.Checked = !_likeHuman;
-
-                _logger.Log($"Human-like click - speed from {String.Join("s, ", _clickWaitTimeChoices.ToArray())}");
+                await ClickLikeHuman();
             }
             else
             {
-                LikeHumanClickControl.Checked = _likeHuman;
-
-                _logger.Log($"Custom set click - speed: {_frequency}/second");
-
+                await ClickLikeMachine();
             }
-            CustomFrequencyInput.Enabled = !_likeHuman;
         }
 
-        private void SwitchClickingMode()
+        private async Task RunAdvancedClicks()
         {
-            if (_useCurrentPosition)
+            if (KeyHook.ContinueClicking)
             {
-                UseRecordedCursorButton.Checked = false;
-                AddNewPointButton.Checked = false;
+                if (MouseHook.MarchPlan.Tracks.Count > 0)
+                {
+                    var startTime = DateTime.Now;
+                    while (KeyHook.ContinueClicking && DateTime.Now - startTime < MouseHook.MarchPlan.RepeatDuration)
+                    {
+                        await ExecuteAdvancedClicks(RecordedPlanName.March);
+                    }
+                }
 
-                _logger.Log("Use current cursor position");
+                if (MouseHook.HealPlan.Tracks.Count > 0)
+                {
+                    var startTime = DateTime.Now;
+                    while (KeyHook.ContinueClicking && DateTime.Now - startTime < MouseHook.HealPlan.RepeatDuration)
+                    {
+                        await ExecuteAdvancedClicks(RecordedPlanName.Heal);
+                    }
+                }
             }
-            else if (_inRecording)
+        }
+
+        private async Task ExecuteAdvancedClicks(string planName)
+        {
+            var plan = MouseHook.GetRecordedPlan(planName);
+
+            if (plan.LikeHuman)
             {
-                UseCurrentPositionButton.Checked = false;
-                AddNewPointButton.Checked = false;
-
-                _logger.Log("Use recorded cursor");
+                await ClickLikeHuman(plan);
             }
-            else if (_addNewPoint)
+            else if (plan.LikeMachine)
             {
-                UseCurrentPositionButton.Checked = false;
-                UseRecordedCursorButton.Checked = false;
-
-                _logger.Log("Use add-point mode");
+                await ClickLikeMachine(plan);
             }
-
-            StartCursorRecordingButton.Enabled = _inRecording || _addNewPoint;
-            StopCursorRecordingButton.Enabled = _inRecording || _addNewPoint;
+            else if (plan.Replay)
+            {
+                await ReplayRecordedClicks(plan);
+            }
+            else if (plan.RandomReplay)
+            {
+                await RandomlyReplayRecordedClicks(plan);
+            }
         }
 
         private int GetRandomClickInterval()
@@ -274,6 +520,106 @@ namespace 连点器
             Random random = new Random();
             int index = random.Next(_clickWaitTimeChoices.Count);
             return Convert.ToInt32(_clickWaitTimeChoices[index] * 1000);
+        }
+
+
+        #endregion
+
+
+#region "helpers"
+        private bool ValidateRecordingChecks()
+        {
+            if (!MarchRecordingCheckBox.Checked && !HealRecordingCheckBox.Checked)
+            {
+                _logger.Log("ERROR: Choose a recording plan.");
+                return false;
+            }
+
+            return true;
+        }
+
+        private void UpdateClickingFrequencyForRecordingPlan(RecordedPlan plan, string modeName)
+        {
+            if (modeName == nameof(plan.LikeHuman))
+            {
+                plan.LikeMachine = !plan.LikeHuman;
+                plan.Replay = !plan.LikeHuman;
+                plan.RandomReplay = !plan.LikeHuman;
+
+                _logger.Log("Set plan's clicking speed to human-like.");
+            }
+            else if (modeName == nameof(plan.LikeMachine))
+            {
+                plan.LikeHuman = !plan.LikeMachine;
+                plan.Replay = !plan.LikeMachine;
+                plan.RandomReplay = !plan.LikeMachine;
+
+                _logger.Log("Set plan's clicking speed to machine-like.");
+            }
+            else if (modeName == nameof(plan.Replay))
+            {
+                plan.LikeHuman = !plan.Replay;
+                plan.LikeMachine = !plan.Replay;
+                plan.RandomReplay = !plan.Replay;
+
+                _logger.Log("Set plan's clicking speed to original replay.");
+            }
+            else if (modeName == nameof(plan.RandomReplay))
+            {
+                plan.LikeHuman = !plan.RandomReplay;
+                plan.LikeMachine = !plan.RandomReplay;
+                plan.Replay = !plan.LikeMachine;
+
+                _logger.Log("Set plan's clicking speed to random replay.");
+            }
+        }
+
+        private void UpdateClickingFrequencyForQuickStart(bool likeHumanChecked)
+        {
+            _likeHuman = likeHumanChecked;
+
+            if (_likeHuman)
+            {
+                QuickStartLikeMachineClickControl.Checked = !_likeHuman;
+
+                _logger.Log($"Human-like click - speed from {String.Join("s, ", _clickWaitTimeChoices.ToArray())}");
+            }
+            else
+            {
+                QuickStartLikeHumanClickControl.Checked = _likeHuman;
+
+                _logger.Log($"Custom set click - speed: {_frequency}/second");
+
+            }
+            CustomFrequencyInput.Enabled = !_likeHuman;
+        }
+
+        private void ToggleStartStopButton()
+        {
+            StartBtn.Enabled = !_isStimulating;
+            StopButton.Enabled = _isStimulating;
+        }
+
+        private void ToggleRecordingButton()
+        {
+            StartCursorRecordingButton.Enabled = !_isRecording;
+            StopCursorRecordingButton.Enabled = _isRecording;
+        }
+
+        private void ToggleQuickOrAdvancedMode()
+        {
+            QuickStartRadioBtn.Checked = _quickStart;
+            AdvancedRadioBtn.Checked = !_quickStart;
+
+            foreach (var control in QuickStartGroupBox.Controls)
+            {
+                control.GetType().GetProperty("Enabled")?.SetValue(control, _quickStart);
+            }
+
+            foreach (var control in AdvancedGroupBox.Controls)
+            {
+                control.GetType().GetProperty("Enabled")?.SetValue(control, !_quickStart);
+            }
         }
 
         private static bool ValidateDatetime()
@@ -290,25 +636,41 @@ namespace 连点器
             }
         }
 
-        private void PopulatePointBoxes()
+        private static bool ValidateRecordingPlans()
         {
-            var pointboxes = GetPointBoxes();
+            var validMarchCounts = MouseHook.MarchPlan.Tracks.Count > 0;
+            var validHealCounts = MouseHook.HealPlan.Tracks.Count > 0;
 
-            foreach (var track in MouseHook.ClickTracks.Tracks)
+            if (!validMarchCounts && !validHealCounts)
             {
-                var box = GetPointBoxes().FirstOrDefault(x => String.IsNullOrEmpty(x.Text));
-                box.Text = track.GetCorodinates();  
+                _logger.Log("ERROR: No any tracks recorded.");
+                return false;
+            }
+            else
+            {
+                return ValidateClickingDuration(MouseHook.MarchPlan) && ValidateClickingDuration(MouseHook.HealPlan);
             }
 
         }
 
-        private List<TextBox> GetPointBoxes()
+        private static bool ValidateClickingDuration(RecordedPlan tracks)
         {
-            var pointboxes = groupBox2.Controls.OfType<TextBox>();
-            pointboxes = pointboxes.OrderBy(x => x.TabIndex);
-
-            return pointboxes.ToList<TextBox>();
+            if (tracks.Tracks.Count > 0)
+            {
+                if (tracks.RepeatDuration > TimeSpan.Zero)
+                {
+                    return true;
+                }
+                else
+                {
+                    _logger.Log("ERROR: fill in march repeat duration.");
+                    return false;
+                }
+            }
+            return true;
         }
+
+#endregion
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {

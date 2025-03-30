@@ -21,11 +21,9 @@ namespace 连点器.Lib
 
         internal static nint SetKeyHook()
         {
-            using (Process curProcess = Process.GetCurrentProcess())
-            using (ProcessModule curModule = curProcess.MainModule)
-            {
-                return SetWindowsHookEx(WH_KEYBOARD_LL, _keyProc, GetModuleHandle(curModule.ModuleName), 0);
-            }
+            using Process curProcess = Process.GetCurrentProcess();
+            using ProcessModule curModule = curProcess.MainModule;
+            return SetWindowsHookEx(WH_KEYBOARD_LL, _keyProc, GetModuleHandle(curModule.ModuleName), 0);
         }
 
         private static nint KeyHookCallback(int nCode, nint wParam, nint lParam)

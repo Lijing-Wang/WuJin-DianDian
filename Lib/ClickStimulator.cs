@@ -23,8 +23,7 @@ namespace 连点器.Lib
 
         internal void StimulateClickAtCurrentPosition()
         {
-            Point currentCursorPosition;
-            var findPoint = GetCursorPos(out currentCursorPosition);
+            var findPoint = GetCursorPos(out Point currentCursorPosition);
             if (findPoint)
             {
                 int x = currentCursorPosition.X;
@@ -44,5 +43,6 @@ namespace 连点器.Lib
             mouse_event(MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_LEFTUP, point.X, point.Y, 0, 0);
             _logger.Append($"Clicked at {point.X}, {point.Y}.");
         }
+
     }
 }
