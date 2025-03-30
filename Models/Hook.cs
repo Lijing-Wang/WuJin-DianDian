@@ -1,6 +1,6 @@
 ﻿using System.Runtime.InteropServices;
 
-namespace 连点器.Models
+namespace WuJinDianDian.Models
 {
     internal abstract class Hook
     {

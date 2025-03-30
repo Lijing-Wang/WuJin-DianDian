@@ -1,20 +1,26 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.13.35806.99 d17.13
+VisualStudioVersion = 17.13.35806.99
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "连点器", "连点器.csproj", "{FBB534F2-698D-4163-953E-5BF5C6554A18}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "WuJinDianDian", "WuJinDianDian.csproj", "{FBB534F2-698D-4163-953E-5BF5C6554A18}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
+		Debug|x64 = Debug|x64
 		Release|Any CPU = Release|Any CPU
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Debug|x64.ActiveCfg = Debug|x64
+		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Debug|x64.Build.0 = Debug|x64
 		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Release|x64.ActiveCfg = Release|x64
+		{FBB534F2-698D-4163-953E-5BF5C6554A18}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

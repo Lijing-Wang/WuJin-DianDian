@@ -1,6 +1,6 @@
-﻿namespace 连点器
+﻿namespace WuJinDianDian
 {
-    partial class Form1
+    partial class WuJinDianDian
     {
         /// <summary>
         ///  Required designer variable.
@@ -174,12 +174,11 @@
             // 
             groupBox3.Controls.Add(label2);
             groupBox3.Controls.Add(EndDateTimePicker);
-            groupBox3.Location = new Point(9, 453);
+            groupBox3.Location = new Point(9, 436);
             groupBox3.Name = "groupBox3";
-            groupBox3.Size = new Size(335, 68);
+            groupBox3.Size = new Size(335, 85);
             groupBox3.TabIndex = 4;
             groupBox3.TabStop = false;
-            groupBox3.Text = "截止时间";
             // 
             // AdvancedRadioBtn
             // 
@@ -405,6 +404,8 @@
             // 
             MarchRecordingCheckBox.Anchor = AnchorStyles.None;
             MarchRecordingCheckBox.AutoSize = true;
+            MarchRecordingCheckBox.Checked = true;
+            MarchRecordingCheckBox.CheckState = CheckState.Checked;
             MarchRecordingCheckBox.Location = new Point(13, 72);
             MarchRecordingCheckBox.Name = "MarchRecordingCheckBox";
             MarchRecordingCheckBox.Size = new Size(15, 14);
@@ -510,7 +511,7 @@
             QuickStartGroupBox.TabIndex = 19;
             QuickStartGroupBox.TabStop = false;
             // 
-            // Form1
+            // WuJinDianDian
             // 
             AutoScaleDimensions = new SizeF(7F, 17F);
             AutoScaleMode = AutoScaleMode.Font;
@@ -523,8 +524,8 @@
             Controls.Add(StopButton);
             Controls.Add(ResultBox);
             Controls.Add(StartBtn);
-            Name = "Form1";
-            Text = " ";
+            Name = "WuJinDianDian";
+            Text = "WuJinDianDian";
             ((System.ComponentModel.ISupportInitialize)CustomFrequencyInput).EndInit();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();

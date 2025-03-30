@@ -1,4 +1,4 @@
-﻿namespace 连点器.Models
+﻿namespace WuJinDianDian.Models
 {
     internal class RecordedPlan
     {
@@ -9,6 +9,7 @@
         internal bool Replay = false;
         internal bool RandomReplay = false;
 
+        // in minutes
         internal TimeSpan RepeatDuration { get; set; }
         internal void NewTrack()
         {

@@ -1,5 +1,5 @@
 ﻿
-namespace 连点器.Models
+namespace WuJinDianDian.Models
 {
     internal class ClickTrack
     {

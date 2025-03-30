@@ -1,8 +1,8 @@
 ﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
-using 连点器.Models;
+using WuJinDianDian.Models;
 
-namespace 连点器.Lib
+namespace WuJinDianDian.Lib
 {
     internal class MouseHook : Hook
     {

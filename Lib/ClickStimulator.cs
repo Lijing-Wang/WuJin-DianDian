@@ -1,7 +1,7 @@
 ﻿using System.Runtime.InteropServices;
 
 
-namespace 连点器.Lib
+namespace WuJinDianDian.Lib
 {
     internal class ClickStimulator(TextBox resultBox)
     {

@@ -1,5 +1,5 @@
 ﻿
-namespace 连点器.Lib
+namespace WuJinDianDian.Lib
 {
     internal class Logger(TextBox resultBox)
     {

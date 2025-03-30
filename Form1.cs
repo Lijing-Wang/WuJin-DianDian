@@ -1,15 +1,9 @@
-using System;
-using System.Diagnostics;
-using System.Diagnostics.Eventing.Reader;
-using System.Numerics;
-using System.Runtime.InteropServices;
-using 连点器.Lib;
-using 连点器.Models;
-using static System.Windows.Forms.VisualStyles.VisualStyleElement.TrackBar;
+using WuJinDianDian.Lib;
+using WuJinDianDian.Models;
 
-namespace 连点器
+namespace WuJinDianDian
 {
-    public partial class Form1 : Form
+    public partial class WuJinDianDian : Form
     {
 
         private static DateTime _endDateTime;
@@ -24,7 +18,7 @@ namespace 连点器
         private bool _quickStart = true;
 
         // recording plan switch
-        private bool _marchRecording = false;
+        private bool _marchRecording = true;
 
         // number is in x/per second
         private decimal _frequency = 3;
@@ -36,8 +30,8 @@ namespace 连点器
         private List<double> _clickWaitTimeChoices = [1, 0.5, 0.3];
         // used in advanced replay
         private List<double> _replayWaitTimeTrend = [0, 1];
-        private List<int> _accelerateReplayRange = [10, 20];
-        private List<int> _decelerateReplayRange = [30, 40];
+        private List<int> _accelerateReplayRange = [90, 100];
+        private List<int> _decelerateReplayRange = [110, 140];
 
         // countdown time for mouse to get ready
         // number is in seconds
@@ -50,7 +44,7 @@ namespace 连点器
         private readonly MouseHook _mouseHook;
         private readonly KeyHook _keyHook;
 
-        public Form1()
+        public WuJinDianDian()
         {
             InitializeComponent();
             _logger = new Logger(ResultBox);
@@ -176,6 +170,7 @@ namespace 连点器
             _isRecording = false;
 
             ToggleRecordingButton();
+            PopulateRepeatDuration();
 
             _logger.Log($"End recording. Click traks: {(MarchRecordingCheckBox.Checked ? MouseHook.MarchPlan.PrintTracks() : MouseHook.HealPlan.PrintTracks())}");
         }
@@ -190,6 +185,7 @@ namespace 连点器
         {
             _quickStart = !AdvancedRadioBtn.Checked;
             ToggleQuickOrAdvancedMode();
+            ToggleRecordingButton();
         }
 
         private void MarchRecordingCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -198,7 +194,6 @@ namespace 连点器
             {
                 _marchRecording = true;
                 HealRecordingCheckBox.Checked = false;
-                MarchRandomReplayControl.Checked = false;
             }
         }
 
@@ -207,8 +202,7 @@ namespace 连点器
             if (HealRecordingCheckBox.Checked)
             {
                 _marchRecording = false;
-                MarchRecordingCheckBox.Checked = true;
-                HealRandomReplayControl.Checked = false;
+                MarchRecordingCheckBox.Checked = false;
             }
         }
 
@@ -282,7 +276,7 @@ namespace 连点器
             if (MarchRandomReplayControl.Checked)
             {
                 MouseHook.MarchPlan.RandomReplay = true;
-                UpdateClickingFrequencyForRecordingPlan(MouseHook.MarchPlan, nameof(MouseHook.MarchPlan.Replay));
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.MarchPlan, nameof(MouseHook.MarchPlan.RandomReplay));
 
                 MarchLikeMachineClickControl.Checked = false;
                 MarchLikeHumanClickControl.Checked = false;
@@ -295,7 +289,7 @@ namespace 连点器
             if (HealRandomReplayControl.Checked)
             {
                 MouseHook.HealPlan.RandomReplay = true;
-                UpdateClickingFrequencyForRecordingPlan(MouseHook.HealPlan, nameof(MouseHook.HealPlan.Replay));
+                UpdateClickingFrequencyForRecordingPlan(MouseHook.HealPlan, nameof(MouseHook.HealPlan.RandomReplay));
 
                 HealLikeMachineClickControl.Checked = false;
                 HealLikeHumanClickControl.Checked = false;
@@ -317,18 +311,22 @@ namespace 连点器
 
         private void MarchRepeatDurationTextBox_TextChanged(object sender, EventArgs e)
         {
-            MouseHook.MarchPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(MarchRepeatDurationTextBox.Text));
+            if (string.IsNullOrEmpty(MarchRepeatDurationTextBox.Text)) 
+            {
+                MouseHook.MarchPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(MarchRepeatDurationTextBox.Text));
 
-            _logger.Log($"Set March plan repeat duration. ");
-
+                _logger.Log($"Set March plan repeat duration. ");
+            }
         }
 
         private void HealRepeatDurationTextBox_TextChanged(object sender, EventArgs e)
         {
-            MouseHook.HealPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(HealRepeatDurationTextBox.Text));
+            if (!String.IsNullOrEmpty(HealRepeatDurationTextBox.Text)) 
+            {
+                MouseHook.HealPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(HealRepeatDurationTextBox.Text));
 
-            _logger.Log($"Set Heal plan repeat duration. ");
-
+                _logger.Log($"Set Heal plan repeat duration. ");
+            }
         }
 
 #endregion
@@ -358,9 +356,10 @@ namespace 连点器
                 {
                     _clickStimulator.StimulateClickAt(track.Position);
 
-                    await Task.Delay(RandomizeRecordedFrequency(track.WaitTimeBeforeNextClick));
+                    var waitTime = RandomizeRecordedFrequency(track.WaitTimeBeforeNextClick);
+                    await Task.Delay(waitTime);
 
-                    _logger.Append($"Replay and wait for {track.WaitTimeBeforeNextClick}ms.");
+                    _logger.Append($"Randomly Replay and wait for {waitTime}ms.");
                 }
             }
         }
@@ -376,14 +375,14 @@ namespace 连点器
             // accelarate
             if (trend == 0)
             {
-                var persantage = random.Next(_accelerateReplayRange[0], _accelerateReplayRange[1]);
-                return Convert.ToInt32(waitTime * 1000 * (1 - persantage / 100));
+                var persent = random.Next(_accelerateReplayRange[0], _accelerateReplayRange[1]);
+                return Convert.ToInt32(waitTime * persent / 100);
             }
             // slow down
             else
             {
-                var persantage = random.Next(_decelerateReplayRange[0], _decelerateReplayRange[1]);
-                return Convert.ToInt32(waitTime * 1000 * (1 + persantage / 100));
+                var persent = random.Next(_decelerateReplayRange[0], _decelerateReplayRange[1]);
+                return Convert.ToInt32(waitTime * persent / 100);
             }
         }
 
@@ -459,11 +458,10 @@ namespace 连点器
 
         private async Task RunQuickStartClicks()
         {
-            if (_likeHuman)
+            if (_likeHuman) 
             {
                 await ClickLikeHuman();
-            }
-            else
+            } else
             {
                 await ClickLikeMachine();
             }
@@ -476,7 +474,7 @@ namespace 连点器
                 if (MouseHook.MarchPlan.Tracks.Count > 0)
                 {
                     var startTime = DateTime.Now;
-                    while (KeyHook.ContinueClicking && DateTime.Now - startTime < MouseHook.MarchPlan.RepeatDuration)
+                    while (KeyHook.ContinueClicking && DateTime.Now - startTime < MouseHook.MarchPlan.RepeatDuration && DateTime.Now <= _endDateTime)
                     {
                         await ExecuteAdvancedClicks(RecordedPlanName.March);
                     }
@@ -485,7 +483,7 @@ namespace 连点器
                 if (MouseHook.HealPlan.Tracks.Count > 0)
                 {
                     var startTime = DateTime.Now;
-                    while (KeyHook.ContinueClicking && DateTime.Now - startTime < MouseHook.HealPlan.RepeatDuration)
+                    while (KeyHook.ContinueClicking && DateTime.Now - startTime < MouseHook.HealPlan.RepeatDuration && DateTime.Now <= _endDateTime)
                     {
                         await ExecuteAdvancedClicks(RecordedPlanName.Heal);
                     }
@@ -513,6 +511,8 @@ namespace 连点器
             {
                 await RandomlyReplayRecordedClicks(plan);
             }
+
+            _logger.Log("===========End a repeat===========");
         }
 
         private int GetRandomClickInterval()
@@ -527,6 +527,24 @@ namespace 连点器
 
 
 #region "helpers"
+        private void PopulateRepeatDuration()
+        {
+            if (MouseHook.PlanNameInRecording == RecordedPlanName.March)
+            {
+                var totalWaitTime = MouseHook.MarchPlan.Tracks.Sum(t => t.WaitTimeBeforeNextClick);
+                MouseHook.MarchPlan.RepeatDuration = TimeSpan.FromMilliseconds(totalWaitTime);
+                MarchRepeatDurationTextBox.Text = MouseHook.MarchPlan.RepeatDuration.TotalMinutes.ToString();
+   
+
+            }
+            else if (MouseHook.PlanNameInRecording == RecordedPlanName.Heal)
+            {
+                var totalWaitTime = MouseHook.HealPlan.Tracks.Sum(t => t.WaitTimeBeforeNextClick);
+                MouseHook.HealPlan.RepeatDuration = TimeSpan.FromMilliseconds(totalWaitTime);
+                HealRepeatDurationTextBox.Text = MouseHook.HealPlan.RepeatDuration.TotalMinutes.ToString();
+            }
+        }
+
         private bool ValidateRecordingChecks()
         {
             if (!MarchRecordingCheckBox.Checked && !HealRecordingCheckBox.Checked)
@@ -568,7 +586,7 @@ namespace 连点器
             {
                 plan.LikeHuman = !plan.RandomReplay;
                 plan.LikeMachine = !plan.RandomReplay;
-                plan.Replay = !plan.LikeMachine;
+                plan.Replay = !plan.RandomReplay;
 
                 _logger.Log("Set plan's clicking speed to random replay.");
             }
