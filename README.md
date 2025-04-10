@@ -12,14 +12,14 @@ Thus, the game company does check for clicking hacks. The tool offers multiple c
 
 ## Features
 For the time being, the UI is build with WinForms.
-![UI Overview](/Assets/UI_Overview.PNG)
+
+  ![UI Overview](/Assets/UI_Overview.PNG)
 
 It has two sections that toggle between Quick Start Mode and Advanced Mode.	
 Both modes share the Deadline Section(time picker) at the bottom which is necessary to set with a deadline in the future.
 At the every end, the big textbox shows logging information like errors, point of mouse position, clicking intervals, etc.
 
-
-- Quick Start Mode
+### Quick Start Mode
 Under this mode, the tool will click wherever the current mouse position is.
 The radio buttons switch between the human-like clicking interval and the like-machine clicking interval.
 The human-like clicking interval will be drawn randomly after each stimulated click from choices of 1, 0.3, and 0.5 sec.
@@ -31,7 +31,7 @@ If it's not in a hurry, the human-like mode is recommended to be safe while swit
 
 ![Demo of machine-like clicking:](/Assets/Demo_QuickStart_LikeMachineClicking.gif)
 
-- Advanced Mode
+### Advanced Mode
 The advanced mode allows 2 recordings and replays. Each records a series of mouse clicks and provides 4 clicking speeds in replay. The replay settings are independent so better fit into the user scenarios.
 Speed options cover the like-human clicking mode and the like-machine clicking mode mentioned above.
 On top of that, it supports replay according to the exact original recording as well as replay with fine random touch based on the original recording. 
