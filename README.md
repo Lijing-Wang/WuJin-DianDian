@@ -23,10 +23,12 @@ At the every end, the big textbox shows logging information like errors, point o
 Under this mode, the tool will click wherever the current mouse position is.
 The radio buttons switch between the human-like clicking interval and the like-machine clicking interval.
 The human-like clicking interval will be drawn randomly after each stimulated click from choices of 1, 0.3, and 0.5 sec.
+
+![Demo of like-machine clicking:](/Assets/Demo_QuickStart_HumanLikeClicking.gif)
+
 The machine-like clicking interval comes from the user setting. The demo shows stimulate 3, 5, and 10 clicks per second.* If 
 If it's not in a hurry, the human-like mode is recommended to be safe while switching to the other if you want to speed things up.
 
-![Demo of like-machine clicking:](/Assets/Demo_QuickStart_HumanLikeClicking.gif)
 ![Demo of machine-like clicking:](/Assets/Demo_QuickStart_LikeMachineClicking.gif)
 
 - Advanced Mode
