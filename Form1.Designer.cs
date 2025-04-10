@@ -28,7 +28,7 @@
         /// </summary>
         private void InitializeComponent()
         {
-            StartBtn = new Button();
+            StartButton = new Button();
             label2 = new Label();
             ResultBox = new TextBox();
             EndDateTimePicker = new DateTimePicker();
@@ -74,15 +74,15 @@
             QuickStartGroupBox.SuspendLayout();
             SuspendLayout();
             // 
-            // StartBtn
+            // StartButton
             // 
-            StartBtn.Location = new Point(29, 548);
-            StartBtn.Name = "StartBtn";
-            StartBtn.Size = new Size(108, 25);
-            StartBtn.TabIndex = 0;
-            StartBtn.Text = "倒数并开始";
-            StartBtn.UseVisualStyleBackColor = true;
-            StartBtn.Click += StartBtn_Click;
+            StartButton.Location = new Point(29, 548);
+            StartButton.Name = "StartButton";
+            StartButton.Size = new Size(108, 25);
+            StartButton.TabIndex = 0;
+            StartButton.Text = "倒数并开始";
+            StartButton.UseVisualStyleBackColor = true;
+            StartButton.Click += StartButton_Click;
             // 
             // label2
             // 
@@ -187,7 +187,6 @@
             AdvancedRadioBtn.Name = "AdvancedRadioBtn";
             AdvancedRadioBtn.Size = new Size(118, 21);
             AdvancedRadioBtn.TabIndex = 1;
-            AdvancedRadioBtn.TabStop = true;
             AdvancedRadioBtn.Text = "高级录制模式";
             AdvancedRadioBtn.UseVisualStyleBackColor = true;
             AdvancedRadioBtn.CheckedChanged += AdvancedRadioBtn_CheckedChanged;
@@ -464,7 +463,6 @@
             QuickStartRadioBtn.Name = "QuickStartRadioBtn";
             QuickStartRadioBtn.Size = new Size(88, 21);
             QuickStartRadioBtn.TabIndex = 5;
-            QuickStartRadioBtn.TabStop = true;
             QuickStartRadioBtn.Text = "简单模式";
             QuickStartRadioBtn.UseVisualStyleBackColor = true;
             QuickStartRadioBtn.CheckedChanged += QuickStartRadioBtn_CheckedChanged;
@@ -523,7 +521,7 @@
             Controls.Add(AdvancedGroupBox);
             Controls.Add(StopButton);
             Controls.Add(ResultBox);
-            Controls.Add(StartBtn);
+            Controls.Add(StartButton);
             Name = "WuJinDianDian";
             Text = "WuJinDianDian";
             ((System.ComponentModel.ISupportInitialize)CustomFrequencyInput).EndInit();
@@ -541,7 +539,7 @@
 
         #endregion
 
-        private Button StartBtn;
+        private Button StartButton;
         private Label label2;
         private TextBox ResultBox;
         private DateTimePicker EndDateTimePicker;

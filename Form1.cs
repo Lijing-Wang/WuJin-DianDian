@@ -58,9 +58,9 @@ namespace WuJinDianDian
             _keyHook = new KeyHook();
         }
 
-#region "controls"
+        #region "controls"
 
-        private async void StartBtn_Click(object sender, EventArgs e)
+        private async void StartButton_Click(object sender, EventArgs e)
         {
             if (!ValidateDatetime()) return;
 
@@ -177,15 +177,21 @@ namespace WuJinDianDian
 
         private void QuickStartRadioBtn_CheckedChanged(object sender, EventArgs e)
         {
-            _quickStart = QuickStartRadioBtn.Checked;
-            ToggleQuickOrAdvancedMode();
+            if (QuickStartRadioBtn.Checked)
+            {
+                _quickStart = QuickStartRadioBtn.Checked;
+                ToggleQuickOrAdvancedMode();
+            }
         }
 
         private void AdvancedRadioBtn_CheckedChanged(object sender, EventArgs e)
         {
-            _quickStart = !AdvancedRadioBtn.Checked;
-            ToggleQuickOrAdvancedMode();
-            ToggleRecordingButton();
+            if (AdvancedRadioBtn.Checked)
+            {
+                _quickStart = !AdvancedRadioBtn.Checked;
+                ToggleQuickOrAdvancedMode();
+                ToggleRecordingButton();
+            }
         }
 
         private void MarchRecordingCheckBox_CheckedChanged(object sender, EventArgs e)
@@ -311,7 +317,7 @@ namespace WuJinDianDian
 
         private void MarchRepeatDurationTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (string.IsNullOrEmpty(MarchRepeatDurationTextBox.Text)) 
+            if (string.IsNullOrEmpty(MarchRepeatDurationTextBox.Text))
             {
                 MouseHook.MarchPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(MarchRepeatDurationTextBox.Text));
 
@@ -321,7 +327,7 @@ namespace WuJinDianDian
 
         private void HealRepeatDurationTextBox_TextChanged(object sender, EventArgs e)
         {
-            if (!String.IsNullOrEmpty(HealRepeatDurationTextBox.Text)) 
+            if (!String.IsNullOrEmpty(HealRepeatDurationTextBox.Text))
             {
                 MouseHook.HealPlan.RepeatDuration = TimeSpan.FromMinutes(Convert.ToDouble(HealRepeatDurationTextBox.Text));
 
@@ -329,10 +335,10 @@ namespace WuJinDianDian
             }
         }
 
-#endregion
+        #endregion
 
 
-#region "cliks"
+        #region "cliks"
 
         private async Task ReplayRecordedClicks(RecordedPlan plan)
         {
@@ -458,10 +464,11 @@ namespace WuJinDianDian
 
         private async Task RunQuickStartClicks()
         {
-            if (_likeHuman) 
+            if (_likeHuman)
             {
                 await ClickLikeHuman();
-            } else
+            }
+            else
             {
                 await ClickLikeMachine();
             }
@@ -526,7 +533,7 @@ namespace WuJinDianDian
         #endregion
 
 
-#region "helpers"
+        #region "helpers"
         private void PopulateRepeatDuration()
         {
             if (MouseHook.PlanNameInRecording == RecordedPlanName.March)
@@ -534,7 +541,7 @@ namespace WuJinDianDian
                 var totalWaitTime = MouseHook.MarchPlan.Tracks.Sum(t => t.WaitTimeBeforeNextClick);
                 MouseHook.MarchPlan.RepeatDuration = TimeSpan.FromMilliseconds(totalWaitTime);
                 MarchRepeatDurationTextBox.Text = MouseHook.MarchPlan.RepeatDuration.TotalMinutes.ToString();
-   
+
 
             }
             else if (MouseHook.PlanNameInRecording == RecordedPlanName.Heal)
@@ -614,8 +621,8 @@ namespace WuJinDianDian
 
         private void ToggleStartStopButton()
         {
-            StartBtn.Enabled = !_isStimulating;
             StopButton.Enabled = _isStimulating;
+            StartButton.Enabled = !_isStimulating;
         }
 
         private void ToggleRecordingButton()
@@ -688,7 +695,7 @@ namespace WuJinDianDian
             return true;
         }
 
-#endregion
+        #endregion
 
         protected override void OnFormClosed(FormClosedEventArgs e)
         {
