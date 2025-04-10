@@ -523,7 +523,7 @@
             Controls.Add(ResultBox);
             Controls.Add(StartButton);
             Name = "WuJinDianDian";
-            Text = "WuJinDianDian";
+            Text = "无尽点点";
             ((System.ComponentModel.ISupportInitialize)CustomFrequencyInput).EndInit();
             groupBox1.ResumeLayout(false);
             groupBox1.PerformLayout();
