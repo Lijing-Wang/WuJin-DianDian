@@ -11,7 +11,8 @@ So automatic clicking saves your fingers and helps to keep stress low.
 Thus, the game company does check for clicking hacks. The tool offers multiple clicking frequency options to better fit into different scenarios and just to be safe.
 
 ## Features
-![For the time being, the UI is build with WinForms.](/Assets/UI_Overview.PNG)
+For the time being, the UI is build with WinForms.
+![UI Overview](/Assets/UI_Overview.PNG)
 It has two sections that toggle between Quick Start Mode and Advanced Mode.	
 Both modes share the Deadline Section(time picker) at the bottom which is necessary to set with a deadline in the future.
 At the every end, the big textbox shows logging information like errors, point of mouse position, clicking intervals, etc.
@@ -25,7 +26,7 @@ The machine-like clicking interval comes from the user setting. The demo shows s
 If it's not in a hurry, the human-like mode is recommended to be safe while switching to the other if you want to speed things up.
 
 ![Demo of like-machine clicking:](/Assets/Demo_QuickStart_HumanLikeClicking.gif)
-![Demo of machine-like clicking:](/Assets/Demo_QuickStart_MachineLikeClicking.gif)]
+![Demo of machine-like clicking:](/Assets/Demo_QuickStart_MachineLikeClicking.gif)
 
 - Advanced Mode
 The advanced mode allows 2 recordings and replays. Each records a series of mouse clicks and provides 4 clicking speeds in replay. The replay settings are independent so better fit into the user scenarios.
